@@ -30,8 +30,10 @@ library(summarytools)
 library(GGally)
 library(gt)
 library(flextable)
-library(knitr) 
+library(knitr)
 library(corrplot)
+library(kableExtra)
+
 ```
 
 
@@ -46,7 +48,7 @@ datos <- readxl::read_excel("dataset.xlsx")
 * `name`: Nombre del juego
 * `year`: Año de salida al mercado
 * `metacritic_rating`: Nota de la valoración profesional  (sobre 100)
-* `reviewer_rating``: Nota de la valoración de usuarios   (sobre 10)
+* `reviewer_rating`: Nota de la valoración de usuarios   (sobre 10)
 * `positivity_ratio`: valoraciones positivas/valoraciones negativas
 * `to_beat_main`: Tiempo necesario para superar el juego principal (h)
 * `to_beat_extra`: Tiempo necesario para superar el juego principal y contenido extra (h)
@@ -61,7 +63,6 @@ datos |>
   slice_head(n=10) |> 
 
   gt()
-
 ```
 
 
@@ -74,14 +75,59 @@ Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar 
 
 ### Tablas de frecuencias
 ...
-Hola grupo, esto creo que para nuestro proyecto no funciona, ademas tengo sueño, ya seguiremos, un besito 
+
 
 ```{r}
-tabla_frecuencias <- datos |> 
-  count(tags) |> 
-  mutate(f = n/nrow(datos),
-         N = cumsum(n),
-         F = cumsum(f)) 
-knitr::kable(tabla_frecuencias, digits = 4)
+# Paso 1: Separar las etiquetas usando strsplit con el delimitador |
+tags_separados <- strsplit(datos$tags, "\\|")
 
+# Paso 2: Aplanar la lista resultante en un vector
+tags_vector <- unlist(tags_separados)
+
+# Paso 3: Crear una tabla de frecuencias
+tabla_frecuencias <- as.data.frame(table(tags_vector))
+
+# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias <- tabla_frecuencias %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Paso 5: Mostrar la tabla con formato
+knitr::kable(tabla_frecuencias, digits = 4)
 ```
+
+///aqui habría que hacer otra tabla de freciencias creo
+
+### Gráficos de barras
+//he hecho un gráfico de las puntuaciones de los jugadores
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = metacritic_rating)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  geom_bar(fill = "#338bff") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Puntuación del crítico", 
+       x = "Puntuación (0-100)",
+       y = "Frecuencia absoluta")
+      
+```
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = reviewer_rating)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  geom_bar(fill = "#338bff") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Puntuación del jugador", 
+       x = "Puntuación (0-10)",
+       y = "Frecuencia absoluta")
+```
+
