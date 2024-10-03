@@ -9,26 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
 
 
 # Introducción y definición de objetivos
@@ -54,18 +34,54 @@ library(knitr)
 library(corrplot)
 ```
 
+
+```{r}
+datos <- readxl::read_excel("dataset.xlsx") 
+
+```
+              
 # Diccionario de datos
 
-* `id`: Fecha de producción
-* `name`: Un identificador de la pieza
-* `year`: Extracto seco total (%)
-* `metacritic_rating`: Materia grasa (%)
-* `reviewer_rating``: Cantidad de sal (mg/100g)
-* `positivity_ratio`: pH medido
-* `to_beat_main`: Recuento de un tipo de bacterias
-* `to_beat_extra`: Identificador del analista
-* `to_beat_completionist`: Tipo de queso (A, B, C)
-* `extra_content_length`: Recuento de otro tipo de bacterias
-* `tags`: Recuento de imperfecciones en una inspección visual
+* `id`: Identificador del juego
+* `name`: Nombre del juego
+* `year`: Año de salida al mercado
+* `metacritic_rating`: Nota de la valoración profesional  (sobre 100)
+* `reviewer_rating``: Nota de la valoración de usuarios   (sobre 10)
+* `positivity_ratio`: valoraciones positivas/valoraciones negativas
+* `to_beat_main`: Tiempo necesario para superar el juego principal (h)
+* `to_beat_extra`: Tiempo necesario para superar el juego principal y contenido extra (h)
+* `to_beat_completionist`: Tiempo para completar todos los objetivos (h)
+* `extra_content_length`: Diferencia entre tiempo de objetivos y tiempo de contenido extra
+* `tags`: Tags/ categorias del juego
+
 
 # Muestra del dataset
+```{r}
+datos |>  
+  slice_head(n=10) |> 
+
+  gt()
+
+```
+
+
+# Análisis exploratorio de datos
+Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar relaciones entre los datos y descubrir patrones , para ello usamos diferentes gráficos y métodos.
+
+
+## Datos univariantes
+...
+
+### Tablas de frecuencias
+...
+Hola grupo, esto creo que para nuestro proyecto no funciona, ademas tengo sueño, ya seguiremos, un besito 
+
+```{r}
+tabla_frecuencias <- datos |> 
+  count(tags) |> 
+  mutate(f = n/nrow(datos),
+         N = cumsum(n),
+         F = cumsum(f)) 
+knitr::kable(tabla_frecuencias, digits = 4)
+
+```
