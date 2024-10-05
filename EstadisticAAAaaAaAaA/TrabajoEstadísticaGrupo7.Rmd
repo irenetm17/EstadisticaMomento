@@ -12,7 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 # Introducción y definición de objetivos
+Mediante el estudio estadístico de datos obtenidos sobre los juegos publicados en la plataforma de Steam desde 2005, se pretende conocer y analizar si es posible establecer alguna relación entre las diversas variables que se toman en cuenta en dicho estudio (año de lanzamiento, puntuación media de usarios, etc.).
 
+Al disponer de variables enlazadas directamente a la acogida por parte del público de los diversos títulos de Steam, el principal próposito de esta investigación es llevar a cabo un estudio de mercado sobre los mismos. De este modo se analizaría si es posible establecer una conexión directa entre la satisfacción del púbico y otras variables como podrían ser la duración o los tags. Esta última podría resultar sumamente interesante puesto que sería posible explorar las tendencias de los usuarios a la hora de puntuar juegos de determinados géneros o categorías, profundizando así más allá de los aspectos técnicos del videojuego (como el tiempo de contenido), en lo que el usuario busca experimentar sensorial, emocional o psicológicamente a la hora de decidir qué jugar. Asimismo, dado que las valoraciones profesionales no tienen por qué coincidir con las de los usuarios, también sería de interés estudiar cómo difieren entre sí.
+
+Por otro lado, también se pretende llevar a cabo un análisis sobre los propios desarrolladores, descubriendo así cuáles son los géneros que tienen más lanzamientos cada año y si es posible establecer una relación con las valoraciones de lanzamientos del mismo género de años anteriores.
+
+
+// Texto antiguo por si queréis verlo, luego lo borramos
 El archivo contiene un analisis de datos sobre la relación entre diversos factores (año de lanzamiento, puntuación, etc) y la satisfacción con videojuegos en Steam.
 
 Con estos archivos de datos se pretende hacer un estudio del mercado de los videojuegos y como las críticas oficiales en la plataforma difieren de la opinión de los jugadores comunes.
@@ -25,7 +32,6 @@ Por último, como el género del juego afecta a la positividad de las reseñas y
 ...
 
 ```{r}
-#aquí hay que revisar el html
 library(tidyverse)
 library(summarytools)
 library(GGally)
@@ -34,6 +40,8 @@ library(flextable)
 library(knitr)
 library(corrplot)
 library(kableExtra)
+library(ggplot2)
+library(tidyr)
 
 ```
 
@@ -45,21 +53,20 @@ datos <- readxl::read_excel("dataset.xlsx")
               
 # Diccionario de datos
 
-* `id`: Identificador del juego
-* `name`: Nombre del juego
-* `year`: Año de salida al mercado
-* `metacritic_rating`: Nota de la valoración profesional  (sobre 100)
-* `reviewer_rating`: Nota de la valoración de usuarios   (sobre 10)
-* `positivity_ratio`: valoraciones positivas/valoraciones negativas
-* `to_beat_main`: Tiempo necesario para superar el juego principal (h)
-* `to_beat_extra`: Tiempo necesario para superar el juego principal y contenido extra (h)
-* `to_beat_completionist`: Tiempo para completar todos los objetivos (h)
-* `extra_content_length`: Diferencia entre tiempo de objetivos y tiempo de contenido extra
-* `tags`: Tags/ categorias del juego
+* `id`: Identificador del juego (identificador)
+* `name`: Nombre del juego (identificador)
+* `year`: Año de salida al mercado (numérica discreta)
+* `metacritic_rating`: Nota media de valoración profesional (numérica discreta, valor sobre 100)
+* `reviewer_rating`: Nota media de la valoración de los usuarios   (numérica discreta, sobre 10)
+* `positivity_ratio`: Ratio de positividad, cociente entrev las Valoraciones positivas y las valoraciones negativas (numérica continua)
+* `to_beat_main`: Tiempo medio necesario para superar el juego principal (numérica continua, medida en horas)
+* `to_beat_extra`: Tiempo medio necesario para superar el juego principal y contenido extra (numérica continua, medida en horas)
+* `to_beat_completionist`: Tiempo medio para completar todo el contenido del juego y obtener todo sus logros (numérica continua, medida en horas)
+* `extra_content_length`: Diferencia de tiempo entre el contenido principal y el extra (numérica continua, medida en horas)
+* `tags`: Categorías o "tags" bajo las que se encuentra inscrito cada juego (categórica multinivel)
 
 
 # Muestra del dataset
-Para comprobar que la importación de datos es correcta se han extraido las 10 primeras filas del dataframe al que hemos llamado "datos".
 ```{r}
 datos |>  
   slice_head(n=10) |> 
@@ -76,8 +83,7 @@ Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar 
 ...
 
 ### Tablas de frecuencias
-...
-
+Vamos a hacer tablas de frecuencias para ver la frecuencia en algunos de los datos de el dataset. Los datos que mediremos en estas tablas seran: el dato 'tag' que da informacion sobre el juego, el dato 'to_beat_main' que da informacion sobre el tiempo en horas que se requiere para terminar la historia principal del juego, el dato 'to_beat_extra' que da informacion sobre el tiempo en horas para completar contenido extra y el dato 'to_beat_completionist' que da informacion del tiempo en horas para completar todos los objetivos del juego
 
 ```{r}
 # Paso 1: Separar las etiquetas usando strsplit con el delimitador |
@@ -100,16 +106,73 @@ knitr::kable(tabla_frecuencias, digits = 4)
 ```
 
 ///aqui habría que hacer otra tabla de freciencias creo
+```{r}
+# Paso 3: Crear una tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_main))
 
+# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Paso 5: Mostrar la tabla con formato
+knitr::kable(tabla_frecuencias2, digits = 4)
+```
+```{r}
+# Paso 3: Crear una tabla de frecuencias
+tabla_frecuencias3 <- as.data.frame(table(datos$to_beat_extra))
+
+# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias3 <- tabla_frecuencias3 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Paso 5: Mostrar la tabla con formato
+knitr::kable(tabla_frecuencias3, digits = 4)
+```
+```{r}
+# Paso 3: Crear una tabla de frecuencias
+tabla_frecuencias4 <- as.data.frame(table(datos$to_beat_completionist))
+
+# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias4 <- tabla_frecuencias4 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Paso 5: Mostrar la tabla con formato
+knitr::kable(tabla_frecuencias4, digits = 4)
+```
 ### Gráficos de barras
 //he hecho un gráfico de las puntuaciones de los jugadores
+
+A continuacion se realizaran los graficos para mayor compresion de los datos. Se realiaran graficos de los datos referentes a puntuaciones de los juego, o sea: 'metacritic_rating', 'reviewer_rating',...
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = year)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  geom_bar(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Juegos por año", 
+       x = "Año de salida (2005-2023)",
+       y = "Cantidad de juegos")
+      
+```
+
+
 
 ```{r}
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
   ggplot(aes(x = metacritic_rating)) +
   # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-  geom_bar(fill = "#338bff") +
+  geom_bar(fill = "skyblue") +
   # Aplica un tema predeterminado en blanco y negro para la visualización.
   theme_bw() + 
   # Establece los títulos del gráfico, eje x, y eje y.
@@ -124,7 +187,7 @@ datos |>
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
   ggplot(aes(x = reviewer_rating)) +
   # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-  geom_bar(fill = "#338bff") +
+   geom_bar(fill = "skyblue") +
   # Aplica un tema predeterminado en blanco y negro para la visualización.
   theme_bw() + 
   # Establece los títulos del gráfico, eje x, y eje y.
@@ -133,3 +196,204 @@ datos |>
        y = "Frecuencia absoluta")
 ```
 
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = positivity_ratio)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Puntuación del jugador", 
+       x = "Puntuación (0-10)",
+       y = "Frecuencia absoluta")
+```
+```{r}
+
+ratio_freq <- dataset %>%
+  group_by(positivity_ratio) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Frequency = Frequency/ sum(Frequency)) %>%
+  slice_max(Frequency, n=25) %>%
+  mutate(positivity_ratio = reorder(positivity_ratio, -Frequency))
+
+ ggplot(ratio_freq, aes(x = positivity_ratio, y = Frequency)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_bar(stat = "identity", aes(fill = Frequency)) +
+   scale_y_continuous(labels = scales::percent) +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Frequencia de tags", 
+       x = "Tags",
+       y = "Frecuencia ") + 
+   scale_fill_gradient("Frecuencia", low = "skyblue", high = "coral2") +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+```{r}
+tags_df <- data.frame(tags = unlist(tags_separados))
+tags_df |> group_by(tags) |>  summarise(Frequency = n()) |> mutate(Frequency = Frequency/sum(Frequency), tags = reorder(tags, -Frequency)) |> ggplot(aes(x = tags, y = Frequency)) + geom_bar(stat = "identity", aes(fill = Frequency)) + scale_y_continuous(labels = scales::percent) + theme_bw() + labs(title = "Gráfico de barras con frecuencia relativa de diferentes tags", x = "Tags", y = "Frecuencia relativa") + scale_fill_gradient("Frecuencia", low = "skyblue", high = "coral2") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+```{r}
+tags_df <- data.frame(tags = unlist(tags_separados))
+
+tags_freq <-tags_df %>%
+  group_by(tags) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Frequency = Frequency/ sum(Frequency)) %>%
+  slice_max(Frequency, n=25) %>%
+  mutate(tags = reorder(tags, -Frequency))
+
+ ggplot(tags_freq, aes(x = tags, y = Frequency)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_bar(stat = "identity", aes(fill = Frequency)) +
+   scale_y_continuous(labels = scales::percent) +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Frequencia de tags", 
+       x = "Tags",
+       y = "Frecuencia ") + 
+   scale_fill_gradient("Frecuencia", low = "skyblue", high = "coral2") +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+tags_df <- data.frame(tags = unlist(tags_separados))
+
+tags_freq <-tags_df %>%
+  group_by(tags) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Frequency = Frequency/ sum(Frequency)) %>%
+  slice_min(Frequency, n=25) %>%
+  mutate(tags = reorder(tags, -Frequency))
+
+ ggplot(tags_freq, aes(x = tags, y = Frequency)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_bar(stat = "identity", aes(fill = Frequency)) +
+   scale_y_continuous(labels = scales::percent) +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Frequencia de tags", 
+       x = "Tags",
+       y = "Frecuencia ") + 
+   scale_fill_gradient("Frecuencia", low = "lightblue", high = "coral2") +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = to_beat_main)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Tiempo en completar el juego principal", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+```
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = to_beat_extra)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Tiempo en completar el juego principal y su contenido extra", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+```
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = to_beat_completionist)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Tiempo en completar todo el contenido del juego", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+```
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = extra_content_length)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Duración del contenido extra", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+```
+
+
+
+##Datos bivariantes
+
+###Gráfico de barras
+Se va a comparar las puntuación de metacríticos oficiales con la de los jugadores, en los 10 primeros juegos de la tabla.
+
+
+```{r}
+
+# Transformar los datos al formato largo, seleccionar los 10 primeros y ajustar metacritic_rating
+datos_long <- datos_filtrados %>%
+  slice_head(n = 10) %>%
+  mutate(metacritic_rating = metacritic_rating / 10) %>%  # Ajustar la puntuación a sobre 10
+  pivot_longer(cols = c(metacritic_rating, reviewer_rating), 
+               names_to = "tipo", 
+               values_to = "valor") %>%
+  
+  ###ESTO ES LO QUE HACE QUE SALGAN 8 EN VEZ DE 10
+  drop_na()  # Eliminar filas con valores NA en reviewer_rating
+
+# Crear el gráfico de barras
+ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Comparación de Metacritic y Reviewer Ratings",
+       x = "Juegos",
+       y = "Puntuaciones",
+       fill = "Tipo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas del eje x
+
+
+```
+
+### Gráfico de dispersión
+//Esto no funciona unu
+A continuación compararemos el año de salida de los juegos con el género de juego más producido cada año.
+
+```{r}
+tags_df <- data.frame(tags = unlist(tags_separados))
+tags_df |> group_by(tags) |>  summarise(Frequency = n()) |> mutate(Frequency = Frequency/sum(Frequency), tags = reorder(tags, -Frequency)) |>
+
+# Crear el gráfico de barras
+ggplot(aes(x = tags, y = year)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Género Predilecto por Año",
+       x = "Año",
+       y = "Cantidad",
+       fill = "Género") +
+  theme_minimal()
+```
