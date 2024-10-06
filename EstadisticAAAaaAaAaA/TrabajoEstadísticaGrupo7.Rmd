@@ -1,4 +1,3 @@
-
 ---
 title: "TrabajoEstadistica"
 author: "Grupo7"
@@ -43,6 +42,7 @@ library(corrplot)
 library(kableExtra)
 library(ggplot2)
 library(tidyr)
+library(dplyr)
 
 ```
 
@@ -352,22 +352,22 @@ datos |>
 
 ##Datos bivariantes
 
-###Gráfico de barras
-Se va a comparar las puntuación de metacríticos oficiales con la de los jugadores, en los 10 primeros juegos de la tabla.
+###Gráfico de barras Metacritic y Rewiewer ratings
+Se va a comparar las puntuación de metacríticos oficiales con la puntuación dada por los jugadores (reviewers).
+Para ellos se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
 
 
 ```{r}
 
 # Transformar los datos al formato largo, seleccionar los 10 primeros y ajustar metacritic_rating
-datos_long <- datos_filtrados %>%
+datos_long <- datos %>%
+   # Filtrar filas donde metacritic_rating o reviewer_rating son NA
+  filter(!is.na(metacritic_rating) & !is.na(reviewer_rating)) %>%
   slice_head(n = 10) %>%
   mutate(metacritic_rating = metacritic_rating / 10) %>%  # Ajustar la puntuación a sobre 10
   pivot_longer(cols = c(metacritic_rating, reviewer_rating), 
                names_to = "tipo", 
-               values_to = "valor") %>%
-  
-  ###ESTO ES LO QUE HACE QUE SALGAN 8 EN VEZ DE 10
-  drop_na()  # Eliminar filas con valores NA en reviewer_rating
+               values_to = "valor") 
 
 # Crear el gráfico de barras
 ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
@@ -376,159 +376,180 @@ ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
        x = "Juegos",
        y = "Puntuaciones",
        fill = "Tipo") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas del eje x
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas 
 
 
 ```
+Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los metacríticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
 
-### Gráfico de dispersión
-//Esto no funciona unu
+###Gráfico de dispersión Metacritic y Rewiewer ratings
+También se ha realizado un gráfico de dispersión para visualizar mejor la correlación entre las dos puntuaciones.
+```{r}
+ggplot(datos, aes(x = metacritic_rating, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Metacritic Rating y Reviewer Rating",
+       x = "Metacritic Rating (0-100)",
+       y = "Reviewer Rating (0-10)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+La línea roja representa la correlación positiva que hay entre las dos puntuaciones, es decir, que suelen ser muy parecidas en la mayoría de los casos. Además podemos observar que la mayoría de los juegos suelen tener una puntuación de entre 5 y el 7.5.
+
+###Gráfico de dispersión Metacritic rating según el tiempo para completar el juego.
+Se ha realizado un gráfico de dispersión para ver si había algún tipo de correlación entre la puntuación de los metacríticos y el tiempo para completar un juego.
+```{r}
+# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
+datos_filtrados <- datos %>%
+  filter(to_beat_main >= 0 & to_beat_main <= 100)
+
+# Gráfico de dispersión para comparar metacritic_rating y to_beat_main
+ggplot(datos_filtrados, aes(x = to_beat_main, y = metacritic_rating)) +
+  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Metacritic Rating y Tiempo para Completar el Juego Principal (0-100h)",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Metacritic Rating (0-100)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Aunque se puede observar una leve correlación entre los juegos más largos y mejores puntuados, no podemos decir que el tiempo sea una variable que determine la calificación de un juego, ya que se puede observar que entre los juegos con menos de 25 horas de juego, las puntuaciones varían drásticamente.
+
+
+### Gráfico de tags vs años
+
 A continuación compararemos el año de salida de los juegos con el género de juego más producido cada año.
 
 ```{r}
-tags_df <- data.frame(tags = unlist(tags_separados))
-tags_df |> group_by(tags) |>  summarise(Frequency = n()) |> mutate(Frequency = Frequency/sum(Frequency), tags = reorder(tags, -Frequency)) |>
+# Paso 1: Separar los tags y mantener el año correspondiente
+tags_separados <- datos %>%
+  select(year, tags) %>%
+  # Separar los tags en múltiples filas usando separate_rows
+  separate_rows(tags, sep = "\\|")
 
-# Crear el gráfico de barras
-ggplot(aes(x = tags, y = year)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Género Predilecto por Año",
+# Paso 2: Contar las ocurrencias de cada tag por año
+tags_por_año <- tags_separados %>%
+  group_by(year, tags) %>%
+  summarise(tag_count = n()) %>%
+  ungroup()
+
+# Paso 3: Filtrar los tags más frecuentes (opcional, por ejemplo, los 10 más frecuentes en total)
+tags_mas_frecuentes <- tags_por_año %>%
+  group_by(tags) %>%
+  summarise(total_count = sum(tag_count)) %>%
+  top_n(10, total_count)
+
+# Paso 4: Filtrar los datos para mostrar solo los tags más frecuentes
+tags_por_año_filtrado <- tags_por_año %>%
+  filter(tags %in% tags_mas_frecuentes$tags)
+
+# Paso 5: Graficar los tags más usados por año
+ggplot(tags_por_año_filtrado, aes(x = year, y = tag_count, fill = tags)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme_minimal() +
+  labs(title = "Tags más usados por año",
        x = "Año",
-       y = "Cantidad",
-       fill = "Género") +
-  theme_minimal()
+       y = "Frecuencia de tags",
+       fill = "Tags") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-=======
----
-title: "TrabajoEstadistica"
-author: "Grupo7"
-date: "2024-09-24"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-
-# Introducción y definición de objetivos
-
-El archivo contiene un analisis de datos sobre la relación entre diversos factores (año de lanzamiento, puntuación, etc) y la satisfacción con videojuegos en Steam.
-
-Con estos archivos de datos se pretende hacer un estudio del mercado de los videojuegos y como las críticas oficiales en la plataforma difieren de la opinión de los jugadores comunes.
-También se piensa analizar como el tiempo empleado en superar todo el contenido disponible afecta al recibimiento de los jugadores.
-Por último, como el género del juego afecta a la positividad de las reseñas y cual es el género más jugado a lo largo de los años.
-
-
-# Importación de datos y carga de paquetes
-
-...
+A continuación un resumen en tabla de lo q dice el gráfico
 
 ```{r}
-library(tidyverse)
-library(summarytools)
-library(GGally)
-library(gt)
-library(flextable)
-library(knitr)
-library(corrplot)
-library(kableExtra)
+# Paso 1: Filtrar los datos de los últimos 10 años
+ultimo_año <- max(datos$year, na.rm = TRUE)  # Obtener el año más reciente
+datos_ultimos_10_años <- datos %>%
+  filter(year >= (ultimo_año - 9))  # Filtrar los últimos 10 años
 
-```
+# Paso 2: Separar los tags para cada año dentro de los últimos 10 años
+tags_separados_ultimos_10_años <- datos_ultimos_10_años %>%
+  select(year, tags) %>%
+  separate_rows(tags, sep = "\\|")  # Separar los tags en filas individuales
 
+# Paso 3: Agrupar por año y por tag, y contar la frecuencia de los tags por año
+conteo_tags_ultimos_10_años <- tags_separados_ultimos_10_años %>%
+  group_by(year, tags) %>%
+  summarise(frecuencia = n()) %>%
+  arrange(year, desc(frecuencia))  # Ordenar por año y frecuencia descendente
 
-```{r}
-datos <- readxl::read_excel("dataset.xlsx") 
+# Paso 4: Seleccionar el tag más usado por cada año en los últimos 10 años
+tags_mas_usados_ultimos_10_años <- conteo_tags_ultimos_10_años %>%
+  group_by(year) %>%
+  slice_max(frecuencia, n = 1)  # Obtener el tag más usado para cada año
 
-```
-              
-# Diccionario de datos
-
-* `id`: Identificador del juego
-* `name`: Nombre del juego
-* `year`: Año de salida al mercado
-* `metacritic_rating`: Nota de la valoración profesional  (sobre 100)
-* `reviewer_rating`: Nota de la valoración de usuarios   (sobre 10)
-* `positivity_ratio`: valoraciones positivas/valoraciones negativas
-* `to_beat_main`: Tiempo necesario para superar el juego principal (h)
-* `to_beat_extra`: Tiempo necesario para superar el juego principal y contenido extra (h)
-* `to_beat_completionist`: Tiempo para completar todos los objetivos (h)
-* `extra_content_length`: Diferencia entre tiempo de objetivos y tiempo de contenido extra
-* `tags`: Tags/ categorias del juego
-
-
-# Muestra del dataset
-```{r}
-datos |>  
-  slice_head(n=10) |> 
-
-  gt()
-```
-
-
-# Análisis exploratorio de datos
-Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar relaciones entre los datos y descubrir patrones , para ello usamos diferentes gráficos y métodos.
-
-
-## Datos univariantes
-...
-
-### Tablas de frecuencias
-...
-
-
-```{r}
-# Paso 1: Separar las etiquetas usando strsplit con el delimitador |
-tags_separados <- strsplit(datos$tags, "\\|")
-
-# Paso 2: Aplanar la lista resultante en un vector
-tags_vector <- unlist(tags_separados)
-
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias <- as.data.frame(table(tags_vector))
-
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
-tabla_frecuencias <- tabla_frecuencias %>%
-  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
-         N = cumsum(Freq),             # Frecuencia acumulada
-         F = cumsum(f))                # Frecuencia relativa acumulada
-
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias, digits = 4)
-```
-
-///aqui habría que hacer otra tabla de freciencias creo
-
-### Gráficos de barras
-//he hecho un gráfico de las puntuaciones de los jugadores
-
-```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = metacritic_rating)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-  geom_bar(fill = "#338bff") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Puntuación del crítico", 
-       x = "Puntuación (0-100)",
-       y = "Frecuencia absoluta")
-      
+# Mostrar los tags más usados por año en los últimos 10 años
+print(tags_mas_usados_ultimos_10_años)
 ```
 
 ```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = reviewer_rating)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-  geom_bar(fill = "#338bff") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Puntuación del jugador", 
-       x = "Puntuación (0-10)",
-       y = "Frecuencia absoluta")
+# Paso 1: Separar los tags por cada juego
+tags_separados <- datos %>%
+  select(year, tags) %>%
+  separate_rows(tags, sep = "\\|")  # Separar los tags en filas individuales
+
+# Paso 2: Contar la frecuencia de cada tag por año
+conteo_tags <- tags_separados %>%
+  group_by(year, tags) %>%
+  summarise(frecuencia = n(), .groups = 'drop') %>%
+  arrange(year, desc(frecuencia))
+
+# Paso 3: Filtrar el tag más frecuente de cada año
+tag_mas_frecuente_por_año <- conteo_tags %>%
+  group_by(year) %>%
+  slice_max(frecuencia, n = 1)
+
+# Paso 4: Crear la gráfica de dispersión
+ggplot(tag_mas_frecuente_por_año, aes(x = year, y = frecuencia, color = tags)) +
+  geom_point(size = 5, alpha = 0.7) +  # Puntos de tamaño 5
+  theme_minimal() +
+  labs(title = "Tag más frecuente por Año",
+       x = "Año",
+       y = "Frecuencia del Tag más Usado",
+       color = "Tag más Usado") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+```{r}
+
+# Gráfico de dispersión para comparar reviewer_rating y to_beat_main
+ggplot(datos, aes(x = to_beat_main, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "green") +  # Puntos de color verde con algo de transparencia
+  geom_smooth(method = "lm", color = "orange", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Reviewer Rating (0-10)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
+datos_filtrados <- datos %>%
+  filter(to_beat_main >= 0 & to_beat_main <= 100)
+
+# Gráfico de dispersión para comparar reviewer_rating y to_beat_main
+ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal (0-100h)",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Reviewer Rating (0-10)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Gráfico de dispersión para comparar metacritic_rating y to_beat_main
+ggplot(datos, aes(x = to_beat_main, y = metacritic_rating)) +
+  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Metacritic Rating y Tiempo para Completar el Juego Principal",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Metacritic Rating (0-100)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
