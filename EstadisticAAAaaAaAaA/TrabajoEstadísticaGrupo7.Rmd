@@ -167,7 +167,7 @@ datos |>
 ```
 
 
-
+###Gráfico de barras Metacritic rating (20-100)
 ```{r}
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
@@ -179,10 +179,20 @@ datos |>
   # Establece los títulos del gráfico, eje x, y eje y.
   labs(title = "Puntuación del crítico", 
        x = "Puntuación (0-100)",
-       y = "Frecuencia absoluta")
+       y = "Frecuencia absoluta") +
+   scale_x_continuous(breaks = seq(20, 100, by = 10))  # Define más marcas en el eje X cada 10 unidades
       
 ```
+En este gráfico se observa que las puntuaciones más frecuentes se encuentran entre los 60 y 85 puntos. La puntuación más frecuente, es decir, la moda, son 80 puntos, llegando a una frecuencia de casi 200.
 
+###Resumen Metacritic rating (20-100)
+```{r}
+summary(datos$metacritic_rating)
+
+```
+La información se amplía con este resumen en el que destacamos que la puntuación media son 72,84 puntos. La nota más baja son 20 puntos y la más alta 97 puntos. Se concluye que no hay ningún juego que tenga una puntuación de 100.
+
+###Gráfico de barras Reviewer rating (0-10)
 ```{r}
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
@@ -194,10 +204,20 @@ datos |>
   # Establece los títulos del gráfico, eje x, y eje y.
   labs(title = "Puntuación del jugador", 
        x = "Puntuación (0-10)",
-       y = "Frecuencia absoluta")
+       y = "Frecuencia absoluta") +
+  scale_x_continuous(breaks = seq(0, 10, by = 1))  # Define más marcas en el eje X cada unidad
 ```
+En este gráfico se observa que las puntuaciones más frecuentes se encuentran entre los 5 y 8 puntos. La puntuación más frecuente, es decir, la moda, son 8 puntos, seguido muy de cerca por los 5 puntos. 
+
+###Resumen Reviewer rating (0-10)
+```{r}
+summary(datos$reviewer_rating)
+```
+La información se amplía con este resumen en el que destacamos que la puntuación media son 6,14 puntos. La nota más baja es 1 punto, algo que en el gráfico no se aprecia con claridad. La más alta son 9 puntos. Al igual que en las metacritic ratings, no hay ningún juego con una puntuación de 10.
+
 
 ```{r}
+#####esto sirve? xd
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
   ggplot(aes(x = positivity_ratio)) +
@@ -353,7 +373,7 @@ datos |>
 ##Datos bivariantes
 
 ###Gráfico de barras Metacritic y Rewiewer ratings
-Se va a comparar las puntuación de metacríticos oficiales con la puntuación dada por los jugadores (reviewers).
+Se va a comparar las puntuaciónes de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
 Para ellos se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
 
 
@@ -380,7 +400,7 @@ ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
 
 
 ```
-Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los metacríticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
+Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los críticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
 
 ###Gráfico de dispersión Metacritic y Rewiewer ratings
 También se ha realizado un gráfico de dispersión para visualizar mejor la correlación entre las dos puntuaciones.
@@ -396,8 +416,24 @@ ggplot(datos, aes(x = metacritic_rating, y = reviewer_rating)) +
 ```
 La línea roja representa la correlación positiva que hay entre las dos puntuaciones, es decir, que suelen ser muy parecidas en la mayoría de los casos. Además podemos observar que la mayoría de los juegos suelen tener una puntuación de entre 5 y el 7.5.
 
-###Gráfico de dispersión Metacritic rating según el tiempo para completar el juego.
-Se ha realizado un gráfico de dispersión para ver si había algún tipo de correlación entre la puntuación de los metacríticos y el tiempo para completar un juego.
+###Gráfico de dispersión de puntuaciones según el tiempo para completar el juego.
+Se han realizado dos gráficos de dispersión para ver si había algún tipo de correlación entre la puntuación de los críticos y los reviewers, y el tiempo para completar un juego.
+
+```{r}
+# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
+datos_filtrados <- datos %>%
+  filter(to_beat_main >= 0 & to_beat_main <= 100)
+
+# Gráfico de dispersión para comparar reviewer_rating y to_beat_main
+ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal (0-100h)",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Reviewer Rating (0-10)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 ```{r}
 # Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
 datos_filtrados <- datos %>%
@@ -413,8 +449,10 @@ ggplot(datos_filtrados, aes(x = to_beat_main, y = metacritic_rating)) +
        y = "Metacritic Rating (0-100)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-Aunque se puede observar una leve correlación entre los juegos más largos y mejores puntuados, no podemos decir que el tiempo sea una variable que determine la calificación de un juego, ya que se puede observar que entre los juegos con menos de 25 horas de juego, las puntuaciones varían drásticamente.
 
+
+
+Aunque en ambos casos se puede observar una leve correlación entre los juegos más largos y mejores puntuados, no podemos decir que el tiempo sea una variable que determine la calificación de un juego, ya que se puede observar que entre los juegos con menos de 25 horas de juego, las puntuaciones varían drásticamente. Por lo tanto, no se puede concluir a ciencia cierta que el tiempo de juego influya en la puntuación.
 
 ### Gráfico de tags vs años
 
@@ -525,21 +563,7 @@ ggplot(datos, aes(x = to_beat_main, y = reviewer_rating)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
-# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
-datos_filtrados <- datos %>%
-  filter(to_beat_main >= 0 & to_beat_main <= 100)
 
-# Gráfico de dispersión para comparar reviewer_rating y to_beat_main
-ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
-  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
-  theme_minimal() +
-  labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal (0-100h)",
-       x = "Tiempo para Completar el Juego Principal (horas)",
-       y = "Reviewer Rating (0-10)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
 
 ```{r}
 # Gráfico de dispersión para comparar metacritic_rating y to_beat_main
