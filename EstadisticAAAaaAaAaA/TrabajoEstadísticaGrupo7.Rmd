@@ -43,6 +43,7 @@ library(kableExtra)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(psych)
 
 ```
 
@@ -84,7 +85,9 @@ Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar 
 ...
 
 ### Tablas de frecuencias
-Vamos a hacer tablas de frecuencias para ver la frecuencia en algunos de los datos de el dataset. Los datos que mediremos en estas tablas seran: el dato 'tag' que da informacion sobre el juego, el dato 'to_beat_main' que da informacion sobre el tiempo en horas que se requiere para terminar la historia principal del juego, el dato 'to_beat_extra' que da informacion sobre el tiempo en horas para completar contenido extra y el dato 'to_beat_completionist' que da informacion del tiempo en horas para completar todos los objetivos del juego
+
+Vamos a hacer tablas de frecuencias para ver la frecuencia en algunos de los datos de el dataset. Los datos que mediremos en estas tablas seran: el dato 'tag' que da información sobre el juego, el dato 'to_beat_main' que da información sobre el tiempo en horas que se requiere para terminar la historia principal del juego, el dato 'to_beat_extra' que da informaciçon sobre el tiempo en horas para completar contenido extra y el dato 'to_beat_completionist' que da información del tiempo en horas para completar todos los objetivos del juego.
+
 
 ```{r}
 # Paso 1: Separar las etiquetas usando strsplit con el delimitador |
@@ -149,7 +152,9 @@ knitr::kable(tabla_frecuencias4, digits = 4)
 ### Gráficos de barras
 //he hecho un gráfico de las puntuaciones de los jugadores
 
-A continuacion se realizaran los graficos para mayor compresion de los datos. Se realiaran graficos de los datos referentes a puntuaciones de los juego, o sea: 'metacritic_rating', 'reviewer_rating',...
+
+A continuación se realizarán los gráficos para mayor compresión de los datos. Se realiaran graficos de los datos referentes a puntuaciones de los juego, o sea: 'metacritic_rating', 'reviewer_rating',...
+
 
 ```{r}
 datos |> 
@@ -340,6 +345,7 @@ datos |>
        y = "Frecuencia absoluta")
 ```
 
+
 ```{r}
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
@@ -354,6 +360,71 @@ datos |>
        y = "Frecuencia absoluta")
 ```
 
+### Gráfico de densidad de to_beat_extra
+// Todo esto seguramente haya que redactarlo mejor, pero lo dejo así por ahora.
+A continuación el gráfico de densidad de to_beat_main sin agrupar datos:
+```{r density_plot, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados <- datos %>%
+  filter(!is.na(to_beat_extra))
+
+# Crear el gráfico de densidad
+ggplot(datos_filtrados, aes(x = to_beat_main)) +
+  geom_density(fill = "lightblue", color = "darkblue", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal y su Contenido Extra",
+       x = "Tiempo para Completar el Juego Principal y su Contenido Extra (horas)",
+       y = "Densidad") +
+  theme_minimal()
+```
+
+Dado que la existencia de muy pocos datos con valroes muy grandes dificulta el análisis del gráfico de densidad, se ha optado por hacer otro gráfico de densidad agrupando los datos más grandes, a partir de 50 horas, en un mismo valor. De este modo, es posible analizar con mayor precisión los datos en este rango de 0 a 50 horas, que es donde se encuentran la mayoría de ellos. Al aplicar este cambio, se obtiene el siguiente gráfico de densidad:
+
+```{r density_plot_grouped_extra, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados_extra <- datos %>%
+  filter(!is.na(to_beat_extra))
+
+# Agrupar valores mayores a 50 horas en una nueva categoría
+datos_filtrados_extra <- datos_filtrados_extra %>%
+  mutate(to_beat_extra_grouped = ifelse(to_beat_extra > 50, 50, to_beat_extra))
+
+# Crear el gráfico de densidad usando la variable agrupada
+ggplot(datos_filtrados_extra, aes(x = to_beat_extra_grouped)) +
+  geom_density(fill = "lightblue", color = "darkblue", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal y Contenido Extra (Agrupando > 50h)",
+       x = "Tiempo para Completar el Juego Principal y Contenido Extra (horas)",
+       y = "Densidad") +
+  theme_minimal() +
+  scale_x_continuous(breaks = c(seq(0, 50, by = 10)), labels = c(seq(0, 40, by = 10), "50+"))
+
+```
+A partir de estos dos gráficos, entonces, es posible establecer una clara predominancia de juegos cuyo contenido principal y extras tan solo requieren entre 0 y 10 horas para completarse, con un pico claro en unas 3 horas. A partir de las 10 horas, la densidad de juegos no hace más que decrecer a medida que aumenta la variable del timepo, con un leve pico en 20 horas. Ciertamente, en este último gráfico se puede observar que la densidad vuelve a crecer a partir de 47 aproximadamente, pero eso se debe a la agrupación de esos datos cuyo tiempo es mayor a 50. No obstante, si se observa con detenemiento el primer gráfico de densidad, se observa que en realidad, la densidad de juegos a partir de las 50 horas se mantiene bastante estable.
+
+### Resumen estadístico de to_beat_main
+A continuación el resumen estadístico de la variable to_beat_extra:
+```{r summary_to_beat_extra, echo=TRUE}
+# Resumen básico utilizando summary()
+resumen_basico <- summary(datos$to_beat_extra)
+print(resumen_basico)
+
+# Resumen más detallado utilizando psych
+library(psych)
+resumen_detallado <- describe(datos$to_beat_extra)
+print(resumen_detallado)
+
+# Resumen utilizando dplyr para obtener media, mediana, desviación estándar, mínimo y máximo
+resumen_tidy <- datos %>%
+  summarise(
+    media = mean(to_beat_extra, na.rm = TRUE),
+    mediana = median(to_beat_extra, na.rm = TRUE),
+    desviacion_estandar = sd(to_beat_extra, na.rm = TRUE),
+    minimo = min(to_beat_extra, na.rm = TRUE),
+    maximo = max(to_beat_extra, na.rm = TRUE)
+  )
+
+print(resumen_tidy)
+
+
 ```{r}
 datos |> 
   # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
@@ -366,6 +437,7 @@ datos |>
   labs(title = "Duración del contenido extra", 
        x = "Tiempo",
        y = "Frecuencia absoluta")
+
 ```
 
 
@@ -373,8 +445,10 @@ datos |>
 ##Datos bivariantes
 
 ###Gráfico de barras Metacritic y Rewiewer ratings
-Se va a comparar las puntuaciónes de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
-Para ellos se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
+
+Se va a comparar las puntuaciones de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
+Para ello se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
+
 
 
 ```{r}
@@ -576,4 +650,61 @@ ggplot(datos, aes(x = to_beat_main, y = metacritic_rating)) +
        y = "Metacritic Rating (0-100)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+### Gráfico de dispersión de to_beat_extra y to_beat_completionist:
+// De nuevo, toda esta parte habrá que redactarla mejor después de revisar bien que todo tiene sentido.
+A continuación se presenta un gráfico de dispersión entre las variables to_beat_extra y to_beat_completionist para estudiar la posible relación entre ambas:
+```{r scatter_plot_extra_completionist, echo=TRUE}
+# Filtrar los datos para eliminar valores NA en las variables to_beat_extra y to_beat_completionist
+datos_filtrados_dispersion <- datos %>%
+  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
 
+# Crear el gráfico de dispersión
+ggplot(datos_filtrados_dispersion, aes(x = to_beat_extra, y = to_beat_completionist)) +
+  geom_point(color = "blue", alpha = 0.5) +  # Agregar puntos de dispersión
+  labs(title = "Gráfico de Dispersión: Tiempo para Completar Contenido Extra vs. Completar Todo el Juego",
+       x = "Tiempo para Completar Contenido Extra (horas)",
+       y = "Tiempo para Completar Todo el Juego (horas)") +
+  theme_minimal() +
+  geom_smooth(method = "lm", se = FALSE, color = "red")  # Agregar una línea de regresión
+```
+De igual modo que se ha hecho con anterioridad, se procederá a agrupar los valores que más se alejan de donde se concentra la mayor parte de los datos, en este caso, para ello se mostrará un gráfico hasta 500 en el eje x y hasta 2000 en el eje y:
+```{r scatter_plot_grouped, echo=TRUE}
+# Filtrar los datos para eliminar valores NA en las variables to_beat_extra y to_beat_completionist
+datos_filtrados_grouped <- datos %>%
+  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
+
+# Agrupar valores mayores a 500 horas en to_beat_extra y mayores a 2000 horas en to_beat_completionist
+datos_filtrados_grouped <- datos_filtrados_grouped %>%
+  mutate(to_beat_extra_grouped = ifelse(to_beat_extra > 500, 500, to_beat_extra),
+         to_beat_completionist_grouped = ifelse(to_beat_completionist > 2000, 2000, to_beat_completionist))
+
+# Crear el gráfico de dispersión agrupado
+ggplot(datos_filtrados_grouped, aes(x = to_beat_extra_grouped, y = to_beat_completionist_grouped)) +
+  geom_point(color = "blue", alpha = 0.5) +  # Agregar puntos de dispersión
+  labs(title = "Gráfico de Dispersión Agrupado: Tiempo para Completar Contenido Extra vs. Completar Todo el Juego",
+       x = "Tiempo para Completar Contenido Extra (horas, agrupado a 500h)",
+       y = "Tiempo para Completar Todo el Juego (horas, agrupado a 2000h)") +
+  theme_minimal() +
+  geom_smooth(method = "lm", se = FALSE, color = "red")  # Agregar una línea de regresión
+```
+Todos los valores que se salgan del rango marcado por los ejes en el gráfico, se colocarán en el límite de cada eje, es decir, 500 en el caso del eje de abscisas y 2000 en el eje de ordenadas.
+
+Cálculo de correlación:
+```{r correlation_analysis, echo=TRUE}
+# Filtrar datos para eliminar NA en to_beat_extra y to_beat_completionist
+datos_filtrados_correlacion <- datos %>%
+  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
+
+# Calcular la correlación
+correlation_value <- cor(datos_filtrados_correlacion$to_beat_extra, 
+                         datos_filtrados_correlacion$to_beat_completionist, 
+                         method = "pearson")
+
+# Mostrar el resultado
+correlation_value
+```
+Correlación de 0,58.
+
+Tendencia lineal.
+
+A partir de estos gráficos es posible establecer entonces una tendencia lineal entre ambas variables. No obstante, al contar con tan solo 0,58 de correlación, se podría aventurar que no son variables cuya relación lineal sea tan significativa. Ciertamente, es innegable que cuánto mayor sea el tiempo extra del juego, mayor será el tiempo total necesario para completar todos los objetivos, por lo tanto, no son variables completamente sin relación. Sin embargo, no es posible obviar que en su mayoría, los juegos suelen contar con muchas más horas de contenido principal que extra, por lo cual, ambas presentarían una correlación mayor.
