@@ -85,7 +85,9 @@ Comenzamos el EDA (Análisis exploratorio de datos) con la intención de buscar 
 ...
 
 ### Tablas de frecuencias
+
 Vamos a hacer tablas de frecuencias para ver la frecuencia en algunos de los datos de el dataset. Los datos que mediremos en estas tablas seran: el dato 'tag' que da información sobre el juego, el dato 'to_beat_main' que da información sobre el tiempo en horas que se requiere para terminar la historia principal del juego, el dato 'to_beat_extra' que da informaciçon sobre el tiempo en horas para completar contenido extra y el dato 'to_beat_completionist' que da información del tiempo en horas para completar todos los objetivos del juego.
+
 
 ```{r}
 # Paso 1: Separar las etiquetas usando strsplit con el delimitador |
@@ -150,7 +152,9 @@ knitr::kable(tabla_frecuencias4, digits = 4)
 ### Gráficos de barras
 //he hecho un gráfico de las puntuaciones de los jugadores
 
+
 A continuación se realizarán los gráficos para mayor compresión de los datos. Se realiaran graficos de los datos referentes a puntuaciones de los juego, o sea: 'metacritic_rating', 'reviewer_rating',...
+
 
 ```{r}
 datos |> 
@@ -327,6 +331,19 @@ datos |>
        y = "Frecuencia absoluta")
 ```
 
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = to_beat_extra)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Tiempo en completar el juego principal y su contenido extra", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+```
 
 
 ```{r}
@@ -342,6 +359,7 @@ datos |>
        x = "Tiempo",
        y = "Frecuencia absoluta")
 ```
+
 ### Gráfico de densidad de to_beat_extra
 // Todo esto seguramente haya que redactarlo mejor, pero lo dejo así por ahora.
 A continuación el gráfico de densidad de to_beat_main sin agrupar datos:
@@ -405,6 +423,21 @@ resumen_tidy <- datos %>%
   )
 
 print(resumen_tidy)
+
+
+```{r}
+datos |> 
+  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  ggplot(aes(x = extra_content_length)) +
+  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+   geom_histogram(fill = "skyblue") +
+  # Aplica un tema predeterminado en blanco y negro para la visualización.
+  theme_bw() + 
+  # Establece los títulos del gráfico, eje x, y eje y.
+  labs(title = "Duración del contenido extra", 
+       x = "Tiempo",
+       y = "Frecuencia absoluta")
+
 ```
 
 
@@ -412,8 +445,10 @@ print(resumen_tidy)
 ##Datos bivariantes
 
 ###Gráfico de barras Metacritic y Rewiewer ratings
+
 Se va a comparar las puntuaciones de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
 Para ello se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
+
 
 
 ```{r}
@@ -615,7 +650,6 @@ ggplot(datos, aes(x = to_beat_main, y = metacritic_rating)) +
        y = "Metacritic Rating (0-100)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
 ### Gráfico de dispersión de to_beat_extra y to_beat_completionist:
 // De nuevo, toda esta parte habrá que redactarla mejor después de revisar bien que todo tiene sentido.
 A continuación se presenta un gráfico de dispersión entre las variables to_beat_extra y to_beat_completionist para estudiar la posible relación entre ambas:
