@@ -5,10 +5,15 @@ date: "2024-09-24"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,          
+  message = FALSE,      # Oculta mensajes (como los de carga de paquetes)
+  warning = FALSE       # Oculta advertencias (warnings)
+)
+
+```
 
 
 # Introducción y definición de objetivos
@@ -21,7 +26,6 @@ Por otro lado, también se pretende llevar a cabo un análisis sobre los propios
 
 # Importación de datos y carga de paquetes
 
-...
 
 ```{r}
 library(tidyverse)
@@ -363,7 +367,7 @@ tags_freq <-tags_df %>%
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-##Datos bivariantes
+## Datos bivariantes
 
 Vamos a comprobar diversas variables para ver si tienen relación entre ellas, tanto en el impacto en sus opiniones como en el mercado.
 
@@ -372,45 +376,57 @@ Vamos a comprobar diversas variables para ver si tienen relación entre ellas, t
 ### Análisis de 'tags' y 'to_beat_main'
 
 Ahora se realizará una comparativa entre los 25 tags más frecuentes y los diferentes tiempos (Para completar la historia principal, el extra, y todos los objetivos del juego)
-```{r}
-datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
-
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_main)) + 
-  geom_boxplot() +
-  labs(x = "Tags mas frecuentes", y = "To Beat Main", title = "Boxplot de To Beat Main por Tags mas frecuentes") +
-  theme_minimal()
-
-
-```
 
 
 ```{r}
 
 datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
 
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_extra)) + 
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_main <= 50)
+
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_main)) + 
   geom_boxplot() +
-  labs(x = "Frecuencia de Tags", y = "To Beat Extra", title = "Boxplot de To Beat Extra por Frecuencia de Tags") +
+  labs(x = "Tags más frecuentes", y = "To Beat Main", title = "Boxplot de To Beat Main por Tags más frecuentes") +
+  theme_minimal()
+
+
+```
+
+El gráfico muestra que la mayoría de los juegos tienen un tiempo de finalización relativamente corto, por debajo 10 horas. Los puntos son los valores atípicos.
+
+```{r}
+
+datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
+
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_extra <= 50)
+
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_extra)) + 
+  geom_boxplot() +
+  labs(x = "Tags más frecuentes", y = "To Beat Extra", title = "Boxplot de To Beat Extra por Tags más frecuentes") +
   theme_minimal()
 
 
 ```
 ```{r}
 
-
 datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
 
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_completionist)) + 
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_completionist <= 50)
+
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_completionist)) + 
   geom_boxplot() +
-  labs(x = "Frecuencia de Tags", y = "To Beat Completionist", title = "Boxplot de To Beat Completionist por Frecuencia de Tags") +
+  labs(x = "Tags más frecuentes", y = "To Beat Completionist", title = "Boxplot de To Beat Completionist por Tags más frecuentes") +
   theme_minimal()
-
-
 ```
 
+### Gráfico de densidad de to_beat_extra
 
-###Gráfico de densidad de to_beat_extra
-// Todo esto seguramente haya que redactarlo mejor, pero lo dejo así por ahora.
 A continuación el gráfico de densidad de to_beat_main sin agrupar datos:
 ```{r density_plot, echo=TRUE}
 # Filtrar los datos para eliminar valores NA
@@ -541,7 +557,7 @@ La regresión lineal sugiere que hay una relación positiva entre el año de lan
 Se va a comparar las puntuaciones de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
 Para ello se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
 
-
+Gráfico de barras Metacritic y Rewiewer rating:
 
 ```{r}
 
@@ -568,8 +584,6 @@ ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
 ```
 Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los críticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
 
-
-####Gráfico de dispersión Metacritic y Rewiewer rating:
 
 También se ha realizado un gráfico de dispersión para visualizar mejor la correlación entre las dos puntuaciones.
 ```{r}
@@ -603,7 +617,7 @@ ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-### Ánalisis de 'metacritic_rating' y 'to_beat_main'
+### Análisis de 'metacritic_rating' y 'to_beat_main'
 ```{r}
 # Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
 datos_filtrados <- datos %>%
@@ -690,7 +704,7 @@ print(tags_mas_usados_ultimos_10_años)
 ```
 
 
-### Análisis de 'to_beat_extra' y 'to_beat_copletionist'
+### Análisis de 'to_beat_extra' y 'to_beat_completionist'
 
 // De nuevo, toda esta parte habrá que redactarla mejor después de revisar bien que todo tiene sentido.
 
