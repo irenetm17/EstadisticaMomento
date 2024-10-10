@@ -205,7 +205,7 @@ knitr::kable(tabla_top_bottom, digits = 4,
 tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_main))
 
 # Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
-library(dplyr)
+
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
@@ -217,28 +217,35 @@ tabla_frecuencias2_top25 <- tabla_frecuencias2 %>%
 
 # Mostrar la tabla con formato usando knitr::kable
 knitr::kable(tabla_frecuencias2_top25, digits = 4, 
-             caption = "Tabla de Frecuencias: Primeros 25 Valores de 'to_beat_main'")
+             caption = "Primeros 25 Valores de 'to_beat_main'")
 
 ```
 
 ### Variable 'to_beat_extra'
 ```{r}
-# Crea una tabla de frecuencias
+# Crea una tabla de frecuencias a partir de la variable 'to_beat_extra'
 tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_extra))
 
 # Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Muestra la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Filtrar los primeros 25 valores del dataset
+tabla_frecuencias2_top25 <- tabla_frecuencias2 %>%
+  slice(1:25)  # Seleccionar las primeras 25 filas
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2_top25, digits = 4, 
+             caption = "Primeros 25 Valores de 'to_beat_extra'")
+
 ```
 
 ### Variable 'to_beat_completionist'
 ```{r}
-#Crea una tabla de frecuencias
+# Crea una tabla de frecuencias
 tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_completionist))
 
 # Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
@@ -247,12 +254,17 @@ tabla_frecuencias2 <- tabla_frecuencias2 %>%
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-#Muestra la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Filtrar los primeros 25 valores del dataset
+tabla_frecuencias2_top25 <- tabla_frecuencias2 %>%
+  slice(1:25)  # Seleccionar las primeras 25 filas
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2_top25, digits = 4, 
+             caption = "Primeros 25 Valores de 'to_beat_completionist'")
 ```
 
 ### Variable 'extra_content_length'
-Esta variable no se va analizar.
+Esta variable no se va analizar debido a su poca relación con el resto del EDA.
 
 ### Variable 'tags'
 
@@ -272,8 +284,14 @@ tabla_frecuencias <- tabla_frecuencias %>%
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias, digits = 4)
+# Paso 5: Filtrar los primeros 25 valores del dataset
+tabla_frecuencias_top25 <- tabla_frecuencias %>%
+  slice(1:25)  # Seleccionar las primeras 25 filas
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias_top25, digits = 4, 
+             caption = "Primeros 25 tags")
+
 ```
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -462,26 +480,30 @@ print(resumen_tidy)
 Tabla comparativa:
 ```{r}
 tabla_comparativa_años_criticas <- datos |> 
-  mutate(rango_años = cut(year,breaks =7),
-         rango_criticas=cut(metacritic_rating,breaks=7)) |> 
-  count(rango_años,
-        rango_criticas)
+  filter(!is.na(year), !is.na(metacritic_rating)) |>  # Excluir NA
+  mutate(rango_años = cut(year, breaks = 7),
+         rango_criticas = cut(metacritic_rating, breaks = 7)) |> 
+  count(rango_años, rango_criticas)
+
 kable(tabla_comparativa_años_criticas)
 ```
 
-//esto por algun motivo sale como resultado NA, preguntar al profe si es que no tiene relación.
+
 Covarianza:
 ```{r}
-cov_año_criticos <- cov(datos$year, datos$metacritic_rating)
+cov_año_criticos <- cov(datos$year, datos$metacritic_rating, use = "complete.obs")
 cov_año_criticos
 
 ```
+
 Correlación:
 ```{r}
-cor_año_criticos <- cor(datos$year, datos$metacritic_rating)
+cor_año_criticos <- cor(datos$year, datos$metacritic_rating, use = "complete.obs")
 cor_año_criticos
 
 ```
+Este resultado indica que no hay una gran relación lineal pese a que la covarianza era bastante positiva y, aunque existe una leve tendencia a que las calificaciones de los críticos suelan aumentear con los años debido a una mejora en la industria pues cada vez se crearían proyectos mejores que terminan gustando más, esta relación es muy débil y probablemente no significativa por lo que no tiene nada que ver.
+
 Gráfica de dispersión:
 ```{r}
 ggplot(datos, aes(x = year, y = metacritic_rating, color = factor(tags_df))) +
@@ -505,12 +527,13 @@ datos |>
   theme_bw() + 
   geom_smooth(method = lm, se = FALSE)
 ```
-```{r}
+Podemos determinar que la pendiente de la regresión lineal no es muy positiva, confirmando lo dicho con la correlación y covarianza.
 
+```{r}
 reg_año_critica <- lm(metacritic_rating ~ year, data = datos)
 summary(reg_año_critica)
 ```
-//A irene le falta explicar aquí
+La regresión lineal sugiere que hay una relación positiva entre el año de lanzamiento del juego y su calificación por expertos, aunque la magnitud de esta relación es muy pequeña. Otros factores no considerados en esta sección del análisis podrían tener un mayor impacto en las calificaciones.
 
 
 ### Análisis de 'metacritic_rating' y 'rewiewer_rating'
@@ -728,4 +751,10 @@ Tendencia lineal.
 
 A partir de estos gráficos es posible establecer entonces una tendencia lineal entre ambas variables. No obstante, al contar con tan solo 0,58 de correlación, se podría aventurar que no son variables cuya relación lineal sea tan significativa. Ciertamente, es innegable que cuánto mayor sea el tiempo extra del juego, mayor será el tiempo total necesario para completar todos los objetivos, por lo tanto, no son variables completamente sin relación. Sin embargo, no es posible obviar que en su mayoría, los juegos suelen contar con muchas más horas de contenido principal que extra, por lo cual, ambas presentarían una correlación mayor.
 
+
 # Conclusión 
+//Irene con sueño al habla, tenemos que leer todos los analisis bivariantes y ver que como afectan al mercado, o que tags son mas usados, etc.Recordad mirar lo de la tremenda tabla que nos sale en el html, besitos y a mimir
+
+Tras el completo análisis de los datos de estos últimos años en cuanto a juegos en la plataforma de Steam, hemos podido sacar diversos factores que verdaderamente afectan a la opinión del publico o que categoría de juegos ha sido mayor tendencia en estas últimas décadas. 
+
+//Claudia al habla equisde, por si acaso luego no me puedo meter a la conclusión, de mi parte lo más destacable es que las puntuaciones de metacritic y reviewers no suelen variar demasiado. Por otro lado que la duracion de un juego no es un factor que influya en su puntuación tanto en el metacritic como en el review (btw todo esto lo redacté en mi parte asi que no se si es una conclusión)
