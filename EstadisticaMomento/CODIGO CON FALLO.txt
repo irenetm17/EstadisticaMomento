@@ -1,0 +1,59 @@
+
+### Análisis de 'tags' y 'reviewer_rating'
+
+Ya que se dispone de dos variables distintas para medir la satisfacción del público, el análisis anterior se repetirá ahora con las puntuaciones de los usuarios, 'reviewer_rating'. No obstante, dado que ya se ha estudiado ambas variables de puntuación entre sí y obteniendo como resultado que no difieren significativamente, se espera que los resultados en comparación al apartado anterior apeans varíen.
+
+Para estudiar ambas variables se seguirá el mismo camino que en el apartado anterior. Primeramente, creando un resumen estadístico de ambas:
+
+
+```{r}
+resumen_tags <- datos_long %>%
+  group_by(tags_separados) %>%
+  summarise(
+    mean_rating = mean(reviewer_rating, na.rm = TRUE),  # Media de la nota
+    n = n()  # Número de juegos con cada tag
+  ) %>%
+  arrange(desc(mean_rating))  # Ordenar por la media
+
+# Imprimir el resumen
+print(resumen_tags) 
+```
+
+Posteriormente se representará esto mismo visualnmente con ayuda de un gráfico de box plots:
+
+```{r}
+# Filtrar los tags más comunes (ej. con más de 10 juegos)
+tags_comunes <- datos_long %>%
+  count(tags_separados) %>%
+  filter(n > 10) %>%
+  pull(tags_separados)
+
+# Crear el boxplot
+ggplot(datos_long %>% filter(tags_separados %in% tags_comunes), aes(x = tags_separados, y = reviewer_rating)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  # Rotar etiquetas
+  labs(title = "Distribución de Reviewer Rating por Tags", x = "Tags", y = "Reviewer Rating")
+
+```
+
+Tal y como ocurría en el caso anterior, al disponer de tantos 'tags' resulta imposible analizarlo de este modo, por lo que, de nuevo, se analizarán únicamente los 15 'tags' más frecuentes:
+
+```{r}
+# Filtrar los 15 tags más comunes
+tags_comunes <- datos_long %>%
+  count(tags_separados) %>%
+  top_n(15, n) %>%
+  pull(tags_separados)
+
+# Crear boxplots separados para los 15 tags más comunes
+ggplot(datos_long %>% filter(tags_separados %in% tags_comunes), 
+       aes(x = reviewer_rating)) +  # Eje x es el reviewer_rating
+  geom_boxplot() +
+  facet_wrap(~ tags_separados, scales = "free", ncol = 3) +  # Crear facetas por tag
+  labs(title = "Distribución de Reviewer Rating por los 15 Tags Más Comunes", 
+       x = "Reviewer Rating", 
+       y = "Tags") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),  # Etiquetas del eje x en vertical
+        plot.margin = margin(10, 10, 10, 20))  # Ajustar márgenes del gráfico
+```
