@@ -1,27 +1,40 @@
 ---
-title: "TrabajoEstadistica"
+title: "EDA: Steam"
 author: "Grupo7"
 date: "2024-09-24"
-output: html_document
+
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+
 ---
 
+
+
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = TRUE,          
+  message = FALSE,      # Oculta mensajes (como los de carga de paquetes)
+  warning = FALSE       # Oculta advertencias (warnings)
+)
+
 ```
 
 
+# 1. Introducción y definición de objetivos
 
-# Introducción y definición de objetivos
 Mediante el estudio estadístico de datos obtenidos sobre los juegos publicados en la plataforma de Steam desde 2005, se pretende conocer y analizar si es posible establecer alguna relación entre las diversas variables que se toman en cuenta en dicho estudio (año de lanzamiento, puntuación media de usarios, etc.).
 
-Al disponer de variables enlazadas directamente a la acogida por parte del público de los diversos títulos de Steam, el principal próposito de esta investigación es llevar a cabo un estudio de mercado sobre los mismos. De este modo se analizaría si es posible establecer una conexión directa entre la satisfacción del púbico y otras variables como podrían ser la duración o los tags. Esta última podría resultar sumamente interesante puesto que sería posible explorar las tendencias de los usuarios a la hora de puntuar juegos de determinados géneros o categorías, profundizando así más allá de los aspectos técnicos del videojuego (como el tiempo de contenido), en lo que el usuario busca experimentar sensorial, emocional o psicológicamente a la hora de decidir qué jugar. Asimismo, dado que las valoraciones profesionales no tienen por qué coincidir con las de los usuarios, también sería de interés estudiar cómo difieren entre sí.
+Al disponer de variables enlazadas directamente a la acogida por parte del público de los diversos títulos de Steam, el principal propósito de esta investigación es llevar a cabo un estudio de mercado sobre los mismos. De este modo, se analizaría si es posible establecer una conexión directa entre la satisfacción del público y otras variables como podrían ser la duración o los tags. Esta última podría resultar sumamente interesante puesto que sería posible explorar las tendencias de los usuarios a la hora de puntuar juegos de determinados géneros o categorías, profundizando así más allá de los aspectos técnicos del videojuego (como el tiempo de contenido), en lo que el usuario busca experimentar sensorial, emocional o psicológicamente a la hora de decidir qué jugar. Asimismo, dado que las valoraciones profesionales no tienen por qué coincidir con las de los usuarios, también sería de interés estudiar cómo difieren entre sí.
 
 Por otro lado, también se pretende llevar a cabo un análisis sobre los propios desarrolladores, descubriendo así cuáles son los géneros que tienen más lanzamientos cada año y si es posible establecer una relación con las valoraciones de lanzamientos del mismo género de años anteriores.
 
+Precisamente debido a los objetivos de este estudio estadístico, se ha decidido no analizar las variables 'positivity_ratio' y 'extra_content_length', ya que no son relevantes en relación al análisis de otras variables ni tampoco por sí mismas.
 
-# Importación de datos y carga de paquetes
+# 2. Importación de datos y carga de paquetes
 
-...
 
 ```{r}
 library(tidyverse)
@@ -41,54 +54,57 @@ library(psych)
 
 
 ```{r}
+#Lee el dataset al que hemos llamado datos
 datos <- readxl::read_excel("dataset.xlsx") 
 
 ```
               
-# Diccionario de datos
+# 3. Diccionario de datos
 
 * `id`: Identificador del juego (identificador)
 * `name`: Nombre del juego (identificador)
 * `year`: Año de salida al mercado (numérica discreta)
 * `metacritic_rating`: Nota media de valoración profesional (numérica discreta, valor sobre 100)
 * `reviewer_rating`: Nota media de la valoración de los usuarios   (numérica discreta, sobre 10)
-* `positivity_ratio`: Ratio de positividad, cociente entrev las Valoraciones positivas y las valoraciones negativas (numérica continua)
+* `positivity_ratio`: Ratio de positividad, cociente entre las Valoraciones positivas y las valoraciones negativas (numérica continua)
 * `to_beat_main`: Tiempo medio necesario para superar el juego principal (numérica continua, medida en horas)
 * `to_beat_extra`: Tiempo medio necesario para superar el juego principal y contenido extra (numérica continua, medida en horas)
 * `to_beat_completionist`: Tiempo medio para completar todo el contenido del juego y obtener todo sus logros (numérica continua, medida en horas)
 * `extra_content_length`: Diferencia de tiempo entre el contenido principal y el extra (numérica continua, medida en horas)
 * `tags`: Categorías o "tags" bajo las que se encuentra inscrito cada juego (categórica multinivel)
 
-# Análisis exploratorio de datos
-El estudio de este dataset constará de dos partes, por un lado, se llevará a cabo un análisis univariante de todas y cada una de las variables y, por otro lado, un análisis bivariante entre algunas de las variables.
+# 4. Análisis exploratorio de datos
 
+El estudio de este dataset constará de dos partes, siendo la primera un análisis univariante de las variables de las que dispone este dataset, sin incluir aquellas que se ha explicado con anterioridad que no son de interés.
 
-## Datos univariantes
+## 4.1. Datos univariantes
 
-### Variable 'year'
+### 4.1.1. Variable 'year'
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias2 <- as.data.frame(table(datos$year))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+Años <- cut(datos$year, breaks = 6)  # Definimos 6 intervalos
+
+# Crea la tabla de frecuencias 
+tabla_frecuencias2 <- as.data.frame(table(Años))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
+# Muestra la tabla con formato
 knitr::kable(tabla_frecuencias2, digits = 4)
+
 ```
-Gráfico de barras de los años.
 
 
 ```{r}
 datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  # Inicia la visualización 
   ggplot(aes(x = year)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  # Añade un gráfico de barras, rellenando las barras
   geom_bar(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
   theme_bw() + 
   # Establece los títulos del gráfico, eje x, y eje y.
   labs(title = "Juegos por año", 
@@ -101,29 +117,40 @@ datos |>
 datos |> descr(year)
 ```
 
-Podemos observar como la producción de los videojuegos lleva en auge las últimas décadas, haciendo un salto en 2015, además de cómo se frenó la caida de la industria en el año 2020 debido a la pandemia mundial y a la cuarentena. 
+Se observa como la producción de los videojuegos lleva en auge las últimas décadas, haciendo un salto en 2015, además de cómo se frenó la caída de la industria en el año 2020 debido a la pandemia mundial y a la cuarentena. 
 
-### Variable 'metacritic_rating'
+### 4.1.2. Variable 'metacritic_rating'
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias2 <- as.data.frame(table(datos$metacritic_rating))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+# Remueve NA's de los datos 
+datos_limpios <- datos %>%
+  filter(!is.na(metacritic_rating))
+
+# Define los intervalos manualmente para que no haya valores que se salgan de los mínimos y máximos
+breaks <- seq(20, max(datos_limpios$metacritic_rating, na.rm = TRUE), length.out = 8)  # 7 intervalos
+
+# Corta los datos en los intervalos especificados
+metacritic_rating <- cut(datos_limpios$metacritic_rating, breaks = breaks)
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(metacritic_rating))
+
+# Calcula las frecuencias relativas y acumuladas
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
+# Muestra la tabla con formato
 knitr::kable(tabla_frecuencias2, digits = 4)
+
 ```
 ```{r}
 datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  # Inicia una visualización
   ggplot(aes(x = metacritic_rating)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  # Añade un gráfico de barras, rellenando las barras 
   geom_bar(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
   theme_bw() + 
   # Establece los títulos del gráfico, eje x, y eje y.
   labs(title = "Puntuación del crítico", 
@@ -132,38 +159,39 @@ datos |>
    scale_x_continuous(breaks = seq(20, 100, by = 10))  # Define más marcas en el eje X cada 10 unidades
       
 ```
+
 En este gráfico se observa que las puntuaciones más frecuentes se encuentran entre los 60 y 85 puntos. La puntuación más frecuente, es decir, la moda, son 80 puntos, llegando a una frecuencia de casi 200.
 
 ```{r}
 summary(datos$metacritic_rating)
 
 ```
-La información se amplía con este resumen en el que destacamos que la puntuación media son 72,84 puntos. La nota más baja son 20 puntos y la más alta 97 puntos. Se concluye que no hay ningún juego que tenga una puntuación de 100.
+
+La información se amplía con este resumen en el que se destaca que la puntuación media son 72,84 puntos. La nota más baja son 20 puntos y la más alta 97 puntos. Se concluye, entonces, que no hay ningún juego que tenga una puntuación de 100.
 
 
 
-### Variable 'reviewer_rating'
+### 4.1.3.Variable 'reviewer_rating'
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
+# Crea una tabla de frecuencias
 tabla_frecuencias2 <- as.data.frame(table(datos$reviewer_rating))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
+#Muestra la tabla con formato
 knitr::kable(tabla_frecuencias2, digits = 4)
 ```
 
 ```{r}
 datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
+  # Inicia una visualización 
   ggplot(aes(x = reviewer_rating)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  # Añade un gráfico de barras, rellenando las barras 
    geom_bar(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
   theme_bw() + 
   # Establece los títulos del gráfico, eje x, y eje y.
   labs(title = "Puntuación del jugador", 
@@ -171,77 +199,325 @@ datos |>
        y = "Frecuencia absoluta") +
   scale_x_continuous(breaks = seq(0, 10, by = 1))  # Define más marcas en el eje X cada unidad
 ```
+
 En este gráfico se observa que las puntuaciones más frecuentes se encuentran entre los 5 y 8 puntos. La puntuación más frecuente, es decir, la moda, son 8 puntos, seguido muy de cerca por los 5 puntos. 
 
 ```{r}
 summary(datos$reviewer_rating)
 ```
-La información se amplía con este resumen en el que destacamos que la puntuación media son 6,14 puntos. La nota más baja es 1 punto, algo que en el gráfico no se aprecia con claridad. La más alta son 9 puntos. Al igual que en las metacritic ratings, no hay ningún juego con una puntuación de 10.
 
-### Variable 'positivity_ratio'
+La información se amplía con este resumen en el que se destaca que la puntuación media son 6,14 puntos. La nota más baja es 1 punto, algo que en el gráfico no se aprecia con claridad. La más alta son 9 puntos. Al igual que en las metacritic ratings, no hay ningún juego con una puntuación de 10.
+
+### 4.1.4. Variable 'positivity_ratio'
+//HAY QUE VER QUE HACEMOS CON ESTO
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
+# Crear la tabla de frecuencias a partir de datos$positivity_ratio
 tabla_frecuencias2 <- as.data.frame(table(datos$positivity_ratio))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+# Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
-  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
-         N = cumsum(Freq),             # Frecuencia acumulada
-         F = cumsum(f))                # Frecuencia relativa acumulada
+  mutate(f = Freq / sum(Freq),  # Frecuencia relativa
+         N = cumsum(Freq),      # Frecuencia acumulada
+         F = cumsum(f))         # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Filtrar los 10 menos frecuentes y los 10 más frecuentes
+tabla_top_bottom <- tabla_frecuencias2 %>%
+  arrange(Freq) %>%                       # Ordenar por frecuencia
+  slice(c(1:10, (n() - 9):n()))           # Seleccionar las 10 primeras y 10 últimas filas
+
+# Mostrar la tabla formateada con knitr
+knitr::kable(tabla_top_bottom, digits = 4, 
+             caption = "Tabla de Frecuencias: 10 Menos y Más Frecuentes")
+
 ```
 
-### Variable 'to_beat_main'
+### 4.1.5. Variable 'to_beat_main'
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_main))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+# Definir intervalos
+Tiempo <- cut(datos_limpios$to_beat_main, breaks = 10)  # Definimos intervalos
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "Valores de 'to_beat_main'")
+
+
 ```
 
-### Variable 'to_beat_extra'
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
+
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_extra))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+# Truncar los valores mayores a 50
+datos$to_beat_main <- ifelse(datos$to_beat_main > 50, 51, datos$to_beat_main)
+
+# Crear las etiquetas personalizadas para los intervalos
+etiquetas_intervalos <- c(paste0("[", seq(0, 45, by = 5), ", ", seq(5, 50, by = 5), ")"), "Más de 50")
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_main, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crear la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_main'")
+
+
 ```
 
-### Variable 'to_beat_completionist'
+A continuación el gráfico de densidad de 'to_beat_main' sin agrupar datos:
+```{r density_plot1, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados <- datos %>%
+  filter(!is.na(to_beat_main))
+
+# Crear el gráfico de densidad
+ggplot(datos_filtrados, aes(x = to_beat_main)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Densidad") +
+  theme_minimal()
+```
+
+Dado que la existencia de muy pocos datos con valores muy grandes dificulta el análisis del gráfico de densidad, se ha optado por hacer otro gráfico de densidad agrupando los datos más grandes, a partir de 50 horas, en un mismo valor. De este modo, es posible analizar con mayor precisión los datos en este rango de 0 a 50 horas, que es donde se encuentran la mayoría de ellos. Al aplicar este cambio, se obtiene el siguiente gráfico de densidad:
+
+```{r density_plot_grouped_extra1, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados_main <- datos %>%
+  filter(!is.na(to_beat_main))
+
+# Agrupar valores mayores a 50 horas en una nueva categoría
+datos_filtrados_main <- datos_filtrados_main %>%
+  mutate(to_beat_main_grouped = ifelse(to_beat_main > 50, 50, to_beat_main))
+
+# Crear el gráfico de densidad usando la variable agrupada
+ggplot(datos_filtrados_main, aes(x = to_beat_main_grouped)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal (Agrupando > 50h)",
+       x = "Tiempo para Completar el Juego Principal (horas)",
+       y = "Densidad") +
+  theme_minimal() +
+  scale_x_continuous(breaks = c(seq(0, 50, by = 10)), labels = c(seq(0, 40, by = 10), "50+"))
+
+```
+
+A partir de estos dos gráficos, entonces, es posible establecer una clara predominancia de juegos cuyo contenido principal tan solo requieren entre 0 y 4 horas para completarse, con un pico claro en unas 2 horas. A partir de las 4 horas, la densidad de juegos no hace más que decrecer a medida que aumenta la variable del tiempo, con un leve pico en 15 horas. Ciertamente, en este último gráfico se puede observar que la densidad vuelve a crecer a partir de 47 aproximadamente, pero eso se debe a la agrupación de esos datos cuyo tiempo es mayor a 50. No obstante, si se observa con detenimiento el primer gráfico de densidad, se observa que en realidad, la densidad de juegos a partir de las 50 horas se mantiene bastante estable.
+
+A continuación, el resumen estadístico de la variable to_beat_main:
+```{r summary_to_beat_main, echo=TRUE}
+summary(datos$to_beat_main)
+```
+La información se amplía y precisa con este resumen en el que se destaca que el tiempo medio es de 9,49 horas. El tiempo más bajo es de 0,01 horas, algo que en el gráfico no se aprecia con claridad debido al valor tan pequeño que representa. El más alto es de 2105,84 horas. Por otro lado, la mediana se encuentra en las 4 horas.
+
+### 4.1.6. Variable 'to_beat_extra'
 ```{r}
-# Paso 3: Crear una tabla de frecuencias
-tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_completionist))
 
-# Paso 4: Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+Tiempo <- cut(datos$to_beat_extra, breaks = 10)  # Definimos intervalos
+
+# Crea la tabla de frecuencias 
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias2, digits = 4)
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'Valores de to_beat_extra'")
 ```
 
-### Variable 'extra_content_length'
-Esta variable no se va analizar.
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
 
-### Variable 'tags'
+```{r}
+
+# Truncar los valores mayores a 50
+datos$to_beat_extra <- ifelse(datos$to_beat_extra > 50, 51, datos$to_beat_extra)
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_extra, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_extra'")
+
+
+```
+
+A continuación el gráfico de densidad de 'to_beat_extra' sin agrupar datos:
+```{r density_plot2, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados <- datos %>%
+  filter(!is.na(to_beat_extra))
+
+# Crear el gráfico de densidad
+ggplot(datos_filtrados, aes(x = to_beat_extra)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal y su Contenido Extra",
+       x = "Tiempo para Completar el Juego Principal y su Contenido Extra (horas)",
+       y = "Densidad") +
+  theme_minimal()
+```
+
+Dado que la existencia de muy pocos datos con valores muy grandes dificulta el análisis del gráfico de densidad, se ha optado por hacer otro gráfico de densidad agrupando los datos más grandes, a partir de 50 horas, en un mismo valor. De este modo, es posible analizar con mayor precisión los datos en este rango de 0 a 50 horas, que es donde se encuentran la mayoría de ellos. Al aplicar este cambio, se obtiene el siguiente gráfico de densidad:
+
+```{r density_plot_grouped_extra2, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados_extra <- datos %>%
+  filter(!is.na(to_beat_extra))
+
+# Agrupar valores mayores a 50 horas en una nueva categoría
+datos_filtrados_extra <- datos_filtrados_extra %>%
+  mutate(to_beat_extra_grouped = ifelse(to_beat_extra > 50, 50, to_beat_extra))
+
+# Crear el gráfico de densidad usando la variable agrupada
+ggplot(datos_filtrados_extra, aes(x = to_beat_extra_grouped)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar el Juego Principal y Contenido Extra (Agrupando > 50h)",
+       x = "Tiempo para Completar el Juego Principal y Contenido Extra (horas)",
+       y = "Densidad") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10)) +  # Ajuste del tamaño del título
+  scale_x_continuous(breaks = c(seq(0, 50, by = 10)), labels = c(seq(0, 40, by = 10), "50+"))
+
+
+```
+
+A partir de estos dos gráficos, entonces, es posible establecer una clara predominancia de juegos cuyo contenido principal y extras tan solo requieren entre 0 y 10 horas para completarse, con un pico claro en unas 3 horas. A partir de las 10 horas, la densidad de juegos no hace más que decrecer a medida que aumenta la variable del tiempo, con un leve pico en 20 horas. Ciertamente, en este último gráfico se puede observar que la densidad vuelve a crecer a partir de 47 aproximadamente, pero eso se debe a la agrupación de esos datos cuyo tiempo es mayor a 50. No obstante, si se observa con detenimiento el primer gráfico de densidad, se observa que en realidad, la densidad de juegos a partir de las 50 horas se mantiene bastante estable.
+
+A continuación, el resumen estadístico de la variable to_beat_extra:
+```{r summary_to_beat_extra, echo=TRUE}
+summary(datos$to_beat_extra)
+```
+La información se amplía y precisa con este resumen en el que se destaca que el tiempo medio es de 20 horas. El tiempo más bajo es de 0,03 horas, algo que en el gráfico no se aprecia con claridad debido al valor tan pequeño que representa. El más alto es de 6500 horas. Por otro lado, la mediana se encuentra en las 7,5 horas.
+
+### 4.1.7. Variable 'to_beat_completionist'
+```{r}
+
+Tiempo <- cut(datos$to_beat_completionist, breaks = 10)  # Definimos intervalos
+
+# Crea la tabla de frecuencias 
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'Valores de to_beat_completionist'")
+```
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
+
+```{r}
+
+# Truncar los valores mayores a 50
+datos$to_beat_completionist <- ifelse(datos$to_beat_completionist > 50, 51, datos$to_beat_completionist)
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_completionist, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_completionist'")
+
+
+```
+
+A continuación el gráfico de densidad de 'to_beat_completionist' sin agrupar datos:
+```{r density_plot3, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados <- datos %>%
+  filter(!is.na(to_beat_completionist))
+
+# Crear el gráfico de densidad
+ggplot(datos_filtrados, aes(x = to_beat_completionist)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar Todo el Contenido",
+       x = "Tiempo para Completar Todo el Contenido",
+       y = "Densidad") +
+  theme_minimal()
+```
+
+Dado que la existencia de muy pocos datos con valores muy grandes dificulta el análisis del gráfico de densidad, se ha optado por hacer otro gráfico de densidad agrupando los datos más grandes, a partir de 50 horas, en un mismo valor. De este modo, es posible analizar con mayor precisión los datos en este rango de 0 a 50 horas, que es donde se encuentran la mayoría de ellos. Al aplicar este cambio, se obtiene el siguiente gráfico de densidad:
+
+```{r density_plot_grouped_extra3, echo=TRUE}
+# Filtrar los datos para eliminar valores NA
+datos_filtrados_completionist <- datos %>%
+  filter(!is.na(to_beat_completionist))
+
+# Agrupar valores mayores a 50 horas en una nueva categoría
+datos_filtrados_completionist <- datos_filtrados_completionist %>%
+  mutate(to_beat_completionist_grouped = ifelse(to_beat_completionist > 50, 50, to_beat_completionist))
+
+# Crear el gráfico de densidad usando la variable agrupada
+ggplot(datos_filtrados_completionist, aes(x = to_beat_completionist_grouped)) +
+  geom_density(fill = "skyblue", color = "coral1", alpha = 0.6) +
+  labs(title = "Distribución del Tiempo para Completar Todo el Contenido (Agrupando > 50h)",
+       x = "Tiempo para Completar Todo el Contenido (horas)",
+       y = "Densidad") +
+  theme_minimal() +
+  scale_x_continuous(breaks = c(seq(0, 50, by = 10)), labels = c(seq(0, 40, by = 10), "50+"))
+
+```
+
+A partir de estos dos gráficos, entonces, es posible establecer una clara predominancia de juegos cuyo contenido completo tan solo requieren entre 0 y 7,5 horas para completarse, con un pico claro en unas 2 horas. A partir de las 7,5 horas, la densidad de juegos no hace más que decrecer a medida que aumenta la variable del tiempo, con un leve pico en 20 horas. Ciertamente, en este último gráfico se puede observar que la densidad vuelve a crecer a partir de 45,5 aproximadamente, pero eso se debe a la agrupación de esos datos cuyo tiempo es mayor a 50. No obstante, si se observa con detenimiento el primer gráfico de densidad, se observa que en realidad, la densidad de juegos a partir de las 50 horas se mantiene bastante estable.
+
+A continuación, el resumen estadístico de la variable to_beat_completionist:
+```{r summary_to_beat_completionist, echo=TRUE}
+summary(datos$to_beat_completionist)
+```
+La información se amplía y precisa con este resumen en el que se destaca que el tiempo medio es de 34,4 horas. El tiempo más bajo es de 0,02 horas, algo que en el gráfico no se aprecia con claridad debido al valor tan pequeño que representa. No obstante, resulta incoherente que el dato de menor valor de 'to_beat_completionist' sea menor que el mismo de 'to_beat_extra', puesto que este último se encuentra "incluido" en el primero. Por otro lado, el tiempo más alto es de 15319,17 horas. Por otro lado, la mediana se encuentra en las 7,76 horas.
+
+### 4.1.8. Variable 'tags'
 
 ```{r}
 # Paso 1: Separar las etiquetas usando strsplit con el delimitador |
@@ -259,69 +535,24 @@ tabla_frecuencias <- tabla_frecuencias %>%
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Paso 5: Mostrar la tabla con formato
-knitr::kable(tabla_frecuencias, digits = 4)
+# Paso 5: Filtrar los primeros 25 valores del dataset
+tabla_frecuencias_top25 <- tabla_frecuencias %>%
+  slice(1:25)  # Seleccionar las primeras 25 filas
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias_top25, digits = 4, 
+             caption = "Primeros 25 tags")
+
 ```
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-Con el objetivo de estudiar la frecuencia de cada uno de los 'tags' presentes en los diversos juegos, se ha hecho una tabla de frecuencias
-
-Vamos a hacer tablas de frecuencias para ver la frecuencia en algunos de los datos del dataset. Los datos que mediremos en estas tablas seran: el dato 'tag' que da información sobre el juego, el dato 'to_beat_main' que da información sobre el tiempo en horas que se requiere para terminar la historia principal del juego, el dato 'to_beat_extra' que da informaciçon sobre el tiempo en horas para completar contenido extra y el dato 'to_beat_completionist' que da información del tiempo en horas para completar todos los objetivos del juego.
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-A continuación se realizarán los gráficos para mayor compresión de los datos. Se realizaran graficos de los datos referentes a puntuaciones de los juego, o sea: 'metacritic_rating', 'reviewer_rating',...
-Algunos gráficos no se han representado debido por falta de utilidad para este análisis o porque por sí solas no se entienden, un ejemplo de esto puede ser la variable $id.
-
-!!!!!!!!!!!!!!!!!
-
-
-```{r}
-#####esto sirve? xd
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = positivity_ratio)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_histogram(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Puntuación del jugador", 
-       x = "Puntuación (0-10)",
-       y = "Frecuencia absoluta")
-```
-```{r}
-
-ratio_freq <- dataset %>%
-  group_by(positivity_ratio) %>%
-  summarise(Frequency = n()) %>%
-  mutate(Frequency = Frequency/ sum(Frequency)) %>%
-  slice_max(Frequency, n=25) %>%
-  mutate(positivity_ratio = reorder(positivity_ratio, -Frequency))
-
- ggplot(ratio_freq, aes(x = positivity_ratio, y = Frequency)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_bar(stat = "identity", aes(fill = Frequency)) +
-   scale_y_continuous(labels = scales::percent) +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Frequencia de tags", 
-       x = "Tags",
-       y = "Frecuencia ") + 
-   scale_fill_gradient("Frecuencia", low = "skyblue", high = "coral2") +
-   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-
+A continuación, se realizará una gráfica que analizará las frecuencias de todos los 'tags' presentes en el dataset. 
 
 ```{r}
 tags_df <- data.frame(tags = unlist(tags_separados))
 tags_df |> group_by(tags) |>  summarise(Frequency = n()) |> mutate(Frequency = Frequency/sum(Frequency), tags = reorder(tags, -Frequency)) |> ggplot(aes(x = tags, y = Frequency)) + geom_bar(stat = "identity", aes(fill = Frequency)) + scale_y_continuous(labels = scales::percent) + theme_bw() + labs(title = "Gráfico de barras con frecuencia relativa de diferentes tags", x = "Tags", y = "Frecuencia relativa") + scale_fill_gradient("Frecuencia", low = "skyblue", high = "coral2") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+Como se puede comprobar, la cantidad de 'tags' es tal que la gráfica no es capaz de mostrarlas con claridad. Debido a esto, se llevarán a cabo dos gráficas más, una comprobará la frecuencia de los 25 'tags' que lideran la gráfica anterior y, la otra, la frecuencia de los menos utilizadas.
 
 
 ```{r}
@@ -335,7 +566,7 @@ tags_freq <-tags_df %>%
   mutate(tags = reorder(tags, -Frequency))
 
  ggplot(tags_freq, aes(x = tags, y = Frequency)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  # Añade un gráfico de barras
    geom_bar(stat = "identity", aes(fill = Frequency)) +
    scale_y_continuous(labels = scales::percent) +
   # Aplica un tema predeterminado en blanco y negro para la visualización.
@@ -359,7 +590,7 @@ tags_freq <-tags_df %>%
   mutate(tags = reorder(tags, -Frequency))
 
  ggplot(tags_freq, aes(x = tags, y = Frequency)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
+  # Añade un gráfico de barras
    geom_bar(stat = "identity", aes(fill = Frequency)) +
    scale_y_continuous(labels = scales::percent) +
   # Aplica un tema predeterminado en blanco y negro para la visualización.
@@ -372,323 +603,51 @@ tags_freq <-tags_df %>%
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-##Datos bivariantes
 
-Vamos a comprobar diversas variables para ver si tienen relación entre ellas, tanto en el impacto en sus opiniones como en el mercado.
+## 4.2. Datos bivariantes
 
+A continuación se procederá a comprobar diversas variables para estudiar si tienen relación entre ellas, tanto en el impacto de las opiniones de los usuarios como en el mercado.
 
+Primeramente, se compararán los 'tags' con el año de salida para encontrar los más frecuentes según el paso del tiempo. Se continuará analizando los distintos 'tags' con el tiempo de duración de cada juego. Una vez terminado el análisis de los 'tags', se estudiará cómo los años han afectado a las críticas oficiales y si los jugadores están de acuerdo con estas puntuaciones.
 
-### Análisis de 'tags' y 'to_beat_main'
-Ahora se realizará una comparativa entre los 25 tags más frecuentes y los diferentes tiempos (Para completar la historia principal, el extra, y todos los objetivos del juego)
+Por último, se analizarán las reviews de críticos y jugadores con el tiempo de juego, en busca de una posible relación entre la longitud de un juego y su recibimiento en la industria. También se llevará a cabo el mismo análisis, pero con los 'tags' en lugar de con la duración de los juegos.
+
+### 4.2.0. Correlaciones
+
+//PONERLAS EN UNA MATRIZ
+
+Antes de todo, vamos a poner un breve resumen de las correlaciones entre los pares de datos que vamos analizar a modo de introducción. 
+
+Correlación Metacritic_rating y Year:
 ```{r}
-
-  # For reproducibility
-datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
-
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_main)) + 
-  geom_boxplot() +
-  labs(x = "Tags mas frecuentes", y = "To Beat Main", title = "Boxplot de To Beat Mian por Tags mas frecuentes") +
-  theme_minimal()
-
-
+cor_año_criticos <- cor(datos$year, datos$metacritic_rating, use = "complete.obs")
+cor_año_criticos
 ```
 
-
+Correlación Reviewer_rating y Metacritic_rating:
 ```{r}
-
-
-datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
-
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_extra)) + 
-  geom_boxplot() +
-  labs(x = "Frecuencia de Tags", y = "To Beat Extra", title = "Boxplot de To Beat Extra por Frecuencia de Tags") +
-  theme_minimal()
-
-
-```
-```{r}
-
-
-datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
-
-ggplot(datos, aes(x = factor(tags_freq), y = to_beat_completionist)) + 
-  geom_boxplot() +
-  labs(x = "Frecuencia de Tags", y = "To Beat Completionist", title = "Boxplot de To Beat Completionist por Frecuencia de Tags") +
-  theme_minimal()
-
-
-```
-
-```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = to_beat_main)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_histogram(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Tiempo en completar el juego principal", 
-       x = "Tiempo",
-       y = "Frecuencia absoluta")
-```
-
-```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = to_beat_extra)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_histogram(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Tiempo en completar el juego principal y su contenido extra", 
-       x = "Tiempo",
-       y = "Frecuencia absoluta")
-```
-
-
-```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = to_beat_completionist)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_histogram(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Tiempo en completar todo el contenido del juego", 
-       x = "Tiempo",
-       y = "Frecuencia absoluta")
-```
-
-Gráfico de densidad de to_beat_extra
-// Todo esto seguramente haya que redactarlo mejor, pero lo dejo así por ahora.
-A continuación el gráfico de densidad de to_beat_main sin agrupar datos:
-```{r density_plot, echo=TRUE}
-# Filtrar los datos para eliminar valores NA
-datos_filtrados <- datos %>%
-  filter(!is.na(to_beat_extra))
-
-# Crear el gráfico de densidad
-ggplot(datos_filtrados, aes(x = to_beat_main)) +
-  geom_density(fill = "lightblue", color = "darkblue", alpha = 0.6) +
-  labs(title = "Distribución del Tiempo para Completar el Juego Principal y su Contenido Extra",
-       x = "Tiempo para Completar el Juego Principal y su Contenido Extra (horas)",
-       y = "Densidad") +
-  theme_minimal()
-```
-
-Dado que la existencia de muy pocos datos con valroes muy grandes dificulta el análisis del gráfico de densidad, se ha optado por hacer otro gráfico de densidad agrupando los datos más grandes, a partir de 50 horas, en un mismo valor. De este modo, es posible analizar con mayor precisión los datos en este rango de 0 a 50 horas, que es donde se encuentran la mayoría de ellos. Al aplicar este cambio, se obtiene el siguiente gráfico de densidad:
-
-```{r density_plot_grouped_extra, echo=TRUE}
-# Filtrar los datos para eliminar valores NA
-datos_filtrados_extra <- datos %>%
-  filter(!is.na(to_beat_extra))
-
-# Agrupar valores mayores a 50 horas en una nueva categoría
-datos_filtrados_extra <- datos_filtrados_extra %>%
-  mutate(to_beat_extra_grouped = ifelse(to_beat_extra > 50, 50, to_beat_extra))
-
-# Crear el gráfico de densidad usando la variable agrupada
-ggplot(datos_filtrados_extra, aes(x = to_beat_extra_grouped)) +
-  geom_density(fill = "lightblue", color = "darkblue", alpha = 0.6) +
-  labs(title = "Distribución del Tiempo para Completar el Juego Principal y Contenido Extra (Agrupando > 50h)",
-       x = "Tiempo para Completar el Juego Principal y Contenido Extra (horas)",
-       y = "Densidad") +
-  theme_minimal() +
-  scale_x_continuous(breaks = c(seq(0, 50, by = 10)), labels = c(seq(0, 40, by = 10), "50+"))
-
-```
-A partir de estos dos gráficos, entonces, es posible establecer una clara predominancia de juegos cuyo contenido principal y extras tan solo requieren entre 0 y 10 horas para completarse, con un pico claro en unas 3 horas. A partir de las 10 horas, la densidad de juegos no hace más que decrecer a medida que aumenta la variable del timepo, con un leve pico en 20 horas. Ciertamente, en este último gráfico se puede observar que la densidad vuelve a crecer a partir de 47 aproximadamente, pero eso se debe a la agrupación de esos datos cuyo tiempo es mayor a 50. No obstante, si se observa con detenemiento el primer gráfico de densidad, se observa que en realidad, la densidad de juegos a partir de las 50 horas se mantiene bastante estable.
-
-Resumen estadístico de to_beat_main
-A continuación el resumen estadístico de la variable to_beat_extra:
-```{r summary_to_beat_extra, echo=TRUE}
-# Resumen básico utilizando summary()
-resumen_basico <- summary(datos$to_beat_extra)
-print(resumen_basico)
-
-# Resumen más detallado utilizando psych
-library(psych)
-resumen_detallado <- describe(datos$to_beat_extra)
-print(resumen_detallado)
-
-# Resumen utilizando dplyr para obtener media, mediana, desviación estándar, mínimo y máximo
-resumen_tidy <- datos %>%
-  summarise(
-    media = mean(to_beat_extra, na.rm = TRUE),
-    mediana = median(to_beat_extra, na.rm = TRUE),
-    desviacion_estandar = sd(to_beat_extra, na.rm = TRUE),
-    minimo = min(to_beat_extra, na.rm = TRUE),
-    maximo = max(to_beat_extra, na.rm = TRUE)
-  )
-
-print(resumen_tidy)
-
-```
-
-```{r}
-datos |> 
-  # Inicia una visualización de ggplot con 'lab' como el dataframe y 'tipo' como variable en el eje x.
-  ggplot(aes(x = extra_content_length)) +
-  # Añade un gráfico de barras, rellenando las barras con el color #CB0017.
-   geom_histogram(fill = "skyblue") +
-  # Aplica un tema predeterminado en blanco y negro para la visualización.
-  theme_bw() + 
-  # Establece los títulos del gráfico, eje x, y eje y.
-  labs(title = "Duración del contenido extra", 
-       x = "Tiempo",
-       y = "Frecuencia absoluta")
-
-```
-
-
-### Análisis de 'year' y 'metacritic_rating'
-
-Tabla comparativa:
-```{r}
-tabla_comparativa_años_criticas <- datos |> 
-  mutate(rango_años = cut(year,breaks =7),
-         rango_criticas=cut(metacritic_rating,breaks=7)) |> 
-  count(rango_años,
-        rango_criticas)
-kable(tabla_comparativa_años_criticas)
-```
-
-//esto por algun motivo sale como resultado NA, preguntar al profe si es que no tiene relación.
-Covarianza:
-```{r}
-cov_año_criticos <- cov(datos$year, datos$metacritic_rating)
-cov_año_criticos
-
-```
-Correlación:
-```{r}
-cor_año_criticos <- cor(datos$year, datos$metacritic_rating)
+cor_año_criticos <- cor(datos$reviewer_rating, datos$metacritic_rating, use = "complete.obs")
 cor_año_criticos
 
 ```
-Gráfica de dispersión:
+Correlación Reviewer_rating y To_beat_main:
 ```{r}
-ggplot(datos, aes(x = year, y = metacritic_rating, color = factor(tags_df))) +
-  geom_point(color = "blue") +
-  labs(x = "Año", y = "Valoración críticos") +
-  ggtitle("Gráfica Bivariada: Año vs. Valoración Críticos") +
-  scale_color_discrete(name = "Tags")
-```
-Como es normal, podemos observar que hay mucha variedad en las valoraciónes de los críticos ya que cada juego es diferente, sin embargo podemos ver ciertas tendencias sobre los años y, según los expertos, que años tuvieron "mejores" salidas en la industria. 
-
-Tomamos en cuenta sobre todo los años de los que tenemos más datos y, tomando en cuenta que es una valoración sobre 100, desde el 2020 se percibe una supuesta mejora en las críticas, indicando que se han sacado al público mejores obras audiovisuales. Por el contrario desde el 2009 hasta 2013 hubo una peor calidad.
-
-Regresión lineal:
-
-```{r}
-datos |> 
-  slice(1:100) |> 
-  select(year, metacritic_rating) |> 
-  ggplot(aes(x=year, y = metacritic_rating)) + 
-  geom_point() + 
-  theme_bw() + 
-  geom_smooth(method = lm, se = FALSE)
-```
-```{r}
-
-reg_año_critica <- lm(metacritic_rating ~ year, data = datos)
-summary(reg_año_critica)
-```
-//A irene le falta explicar aquí
-
-
-### Análisis de 'metacritic_rating' y 'rewiewer_rating'
-
-Se va a comparar las puntuaciones de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
-Para ello se han seleccionado los 10 primeros juegos de la tabla,ignorando los juegos que no tenían valores de metacritic_rating o rewiewer_rating.
-
-
-
-```{r}
-
-# Transformar los datos al formato largo, seleccionar los 10 primeros y ajustar metacritic_rating
-datos_long <- datos %>%
-   # Filtrar filas donde metacritic_rating o reviewer_rating son NA
-  filter(!is.na(metacritic_rating) & !is.na(reviewer_rating)) %>%
-  slice_head(n = 10) %>%
-  mutate(metacritic_rating = metacritic_rating / 10) %>%  # Ajustar la puntuación a sobre 10
-  pivot_longer(cols = c(metacritic_rating, reviewer_rating), 
-               names_to = "tipo", 
-               values_to = "valor") 
-
-# Crear el gráfico de barras
-ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
-  labs(title = "Comparación de Metacritic y Reviewer Ratings",
-       x = "Juegos",
-       y = "Puntuaciones",
-       fill = "Tipo") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas 
-
+cor_reviewer_main <- cor(datos$reviewer_rating, datos$to_beat_main, use = "complete.obs")
+cor_reviewer_main
 
 ```
-Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los críticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
 
-Gráfico de dispersión Metacritic y Rewiewer ratings
-También se ha realizado un gráfico de dispersión para visualizar mejor la correlación entre las dos puntuaciones.
+Correlación Metacritic_rating y To_beat_main:
 ```{r}
-ggplot(datos, aes(x = metacritic_rating, y = reviewer_rating)) +
-  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
-  theme_minimal() +
-  labs(title = "Comparación entre Metacritic Rating y Reviewer Rating",
-       x = "Metacritic Rating (0-100)",
-       y = "Reviewer Rating (0-10)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+cor_reviewer_main <- cor(datos$metacritic_rating, datos$to_beat_main, use = "complete.obs")
+cor_reviewer_main
+
 ```
-La línea roja representa la correlación positiva que hay entre las dos puntuaciones, es decir, que suelen ser muy parecidas en la mayoría de los casos. Además podemos observar que la mayoría de los juegos suelen tener una puntuación de entre 5 y el 7.5.
+Posteriormente se analizaran en detalle qué significa cada resultado.
 
-### Ánalisis de 'reviewer_rating' y 'to_beat_main'
-Se han realizado dos gráficos de dispersión para ver si había algún tipo de correlación entre la puntuación de los críticos y los reviewers, y el tiempo para completar un juego.
+### 4.2.1. Análisis de 'tags' y 'year'
 
-```{r}
-# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
-datos_filtrados <- datos %>%
-  filter(to_beat_main >= 0 & to_beat_main <= 100)
-
-# Gráfico de dispersión para comparar reviewer_rating y to_beat_main
-ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
-  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
-  theme_minimal() +
-  labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal (0-100h)",
-       x = "Tiempo para Completar el Juego Principal (horas)",
-       y = "Reviewer Rating (0-10)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-### Ánalisis de 'metacritic_rating' y 'to_beat_main'
-```{r}
-# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
-datos_filtrados <- datos %>%
-  filter(to_beat_main >= 0 & to_beat_main <= 100)
-
-# Gráfico de dispersión para comparar metacritic_rating y to_beat_main
-ggplot(datos_filtrados, aes(x = to_beat_main, y = metacritic_rating)) +
-  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
-  theme_minimal() +
-  labs(title = "Comparación entre Metacritic Rating y Tiempo para Completar el Juego Principal (0-100h)",
-       x = "Tiempo para Completar el Juego Principal (horas)",
-       y = "Metacritic Rating (0-100)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-
-
-Aunque en ambos casos se puede observar una leve correlación entre los juegos más largos y mejores puntuados, no podemos decir que el tiempo sea una variable que determine la calificación de un juego, ya que se puede observar que entre los juegos con menos de 25 horas de juego, las puntuaciones varían drásticamente. Por lo tanto, no se puede concluir a ciencia cierta que el tiempo de juego influya en la puntuación.
-
-### Ánalisis de 'tags' y 'year'
-
-A continuación compararemos el año de salida de los juegos con el género de juego más producido cada año.
+A continuación, se comparará el año de salida de los juegos con el género de juego más producido cada año, seguido de un resumen en tabla de lo que dice el gráfico.
 
 ```{r}
 # Paso 1: Separar los tags y mantener el año correspondiente
@@ -723,7 +682,7 @@ ggplot(tags_por_año_filtrado, aes(x = year, y = tag_count, fill = tags)) +
        fill = "Tags") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-A continuación un resumen en tabla de lo q dice el gráfico
+
 
 ```{r}
 # Paso 1: Filtrar los datos de los últimos 10 años
@@ -751,121 +710,411 @@ tags_mas_usados_ultimos_10_años <- conteo_tags_ultimos_10_años %>%
 print(tags_mas_usados_ultimos_10_años)
 ```
 
+### 4.2.2. Análisis de 'tags' y tiempo de jugabilidad.
+
+Ahora se realizará una comparativa entre los 25 tags más frecuentes y los diferentes tiempos (para completar la historia principal, el extra, y todos los objetivos del juego).
+
+
 ```{r}
-# Paso 1: Separar los tags por cada juego
-tags_separados <- datos %>%
-  select(year, tags) %>%
-  separate_rows(tags, sep = "\\|")  # Separar los tags en filas individuales
 
-# Paso 2: Contar la frecuencia de cada tag por año
-conteo_tags <- tags_separados %>%
-  group_by(year, tags) %>%
-  summarise(frecuencia = n(), .groups = 'drop') %>%
-  arrange(year, desc(frecuencia))
+datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
 
-# Paso 3: Filtrar el tag más frecuente de cada año
-tag_mas_frecuente_por_año <- conteo_tags %>%
-  group_by(year) %>%
-  slice_max(frecuencia, n = 1)
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_main <= 50)
 
-# Paso 4: Crear la gráfica de dispersión
-ggplot(tag_mas_frecuente_por_año, aes(x = year, y = frecuencia, color = tags)) +
-  geom_point(size = 5, alpha = 0.7) +  # Puntos de tamaño 5
-  theme_minimal() +
-  labs(title = "Tag más frecuente por Año",
-       x = "Año",
-       y = "Frecuencia del Tag más Usado",
-       color = "Tag más Usado") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_main)) + 
+  geom_boxplot() +
+  labs(x = "Tags más frecuentes", y = "To Beat Main", title = "Boxplot de To Beat Main por Tags más frecuentes") +
+  theme_minimal()
+
 
 ```
 
-
+El gráfico muestra que la mayoría de los juegos tienen un tiempo de finalización relativamente corto, por debajo de 10 horas. Los puntos son los valores atípicos.
 
 ```{r}
 
+datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
+
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_extra <= 50)
+
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_extra)) + 
+  geom_boxplot() +
+  labs(x = "Tags más frecuentes", y = "To Beat Extra", title = "Boxplot de To Beat Extra por Tags más frecuentes") +
+  theme_minimal()
+
+
+```
+
+En este segundo gráfico se puede ver como los valores ascienden un poco estando entre las 15 y las 3 horas.
+```{r}
+
+datos$tags_freq <- sample(1:25, 63543, replace = TRUE)
+
+# Filtrar valores por debajo de un umbral de 50 horas
+datos_filtrados <- datos %>% filter(to_beat_completionist <= 50)
+
+# Generar el boxplot con los datos filtrados
+ggplot(datos_filtrados, aes(x = factor(tags_freq), y = to_beat_completionist)) + 
+  geom_boxplot() +
+  labs(x = "Tags más frecuentes", y = "To Beat Completionist", title = "Boxplot de To Beat Completionist por Tags más frecuentes") +
+  theme_minimal()
+```
+
+Mientras que en este último ya se puede apreciar cómo los valores aumentan, pasando en algunos casos las 20 horas. Esto es de esperar, ya que 'to_beat_completionist' incluye conseguir todos los logros del juego y no tan solo completar la historia principal.
+
+De estos tres gráficos, se puede ver claramente cómo el primero es el que más valores atípicos posee. Esto se puede atribuir a que se está comparando con el tiempo que se tarda en completar el juego completo. Mirando al gráfico, aunque lo más frecuente sea alrededor de las 10 horas, hay muchos valores atípicos que superan las 20 horas y llegan hasta las 50. Los otros dos gráficos están más igualados en el número de valores atípicos. También hay que destacar que 'to_beat_extra", a pesar de tener juegos que duran más tiempo que 'to_beat_main", tiene menos valores atípicos que se congregan alrededor de valores por encima de 30 horas y por debajo de 50.
+
+### 4.2.3. Análisis de 'year' y 'metacritic_rating'
+
+Se empieza creando una tabla comparativa y calculando la covarianza y correlación:
+```{r}
+tabla_comparativa_años_criticas <- datos |> 
+  filter(!is.na(year), !is.na(metacritic_rating)) |>  # Excluir NA
+  mutate(rango_años = cut(year, breaks = 7),
+         rango_criticas = cut(metacritic_rating, breaks = 7)) |> 
+  count(rango_años, rango_criticas)
+
+kable(tabla_comparativa_años_criticas)
+```
+
+
+Covarianza:
+```{r}
+cov_año_criticos <- cov(datos$year, datos$metacritic_rating, use = "complete.obs")
+cov_año_criticos
+
+```
+
+Correlación:
+```{r}
+cor_año_criticos <- cor(datos$year, datos$metacritic_rating, use = "complete.obs")
+cor_año_criticos
+
+```
+Este resultado indica que no hay una gran relación lineal pese a que la covarianza es bastante positiva y, aunque existe una leve tendencia a que las calificaciones de los críticos aumenten con los años debido a una mejora en la industria pues cada vez se crearían proyectos mejores que terminarían gustando más, esta relación es muy débil y probablemente no significativa.
+
+Gráfica de dispersión:
+```{r}
+ggplot(datos, aes(x = year, y = metacritic_rating, color = factor(tags_df))) +
+  geom_point(color = "skyblue") +
+  labs(x = "Año", y = "Valoración críticos") +
+  ggtitle("Año vs. Valoración Críticos") +
+  scale_color_discrete(name = "Tags")
+```
+
+Como es normal, se puede apreciar que hay mucha variedad en las valoraciones de los críticos ya que cada juego es diferente, sin embargo también se puede observar ciertas tendencias sobre los años y, según los expertos, que años tuvieron "mejores" salidas en la industria. 
+
+Tomando en cuenta sobre todo los años de los que tenemos más datos y, tomando en cuenta que es una valoración sobre 100, desde el 2020 se percibe una supuesta mejora en las críticas, indicando que se han sacado al público mejores obras audiovisuales. Por el contrario, desde el 2009 hasta 2013 hubo una peor calidad.
+
+Regresión lineal:
+
+```{r}
+datos |> 
+  slice(1:100) |> 
+  select(year, metacritic_rating) |> 
+  ggplot(aes(x=year, y = metacritic_rating)) + 
+  geom_point() + 
+  theme_bw() + 
+  geom_smooth(method = lm, se = FALSE)
+```
+
+Es posible entonces determinar que la pendiente de la regresión lineal no es muy positiva, confirmando lo dicho con la correlación y covarianza.
+
+```{r}
+reg_año_critica <- lm(metacritic_rating ~ year, data = datos)
+summary(reg_año_critica)
+```
+La regresión lineal sugiere que hay una relación positiva entre el año de lanzamiento del juego y su calificación por expertos, aunque la magnitud de esta relación es muy pequeña. Otros factores no considerados en esta sección del análisis podrían tener un mayor impacto en las calificaciones.
+
+
+### 4.2.4. Análisis de 'metacritic_rating' y 'rewiewer_rating'
+
+Se va a comparar las puntuaciones de los críticos oficiales con la puntuación dada por los jugadores (reviewers).
+Para ello se han seleccionado los 10 primeros juegos de la tabla, ignorando los juegos que no tenían valores de 'metacritic_rating' o 'rewiewer_rating'.
+
+Gráfico de barras 'metacritic_rating' y 'rewiewer_rating':
+
+```{r}
+
+# Transformar los datos al formato largo, seleccionar los 10 primeros y ajustar metacritic_rating
+datos_long <- datos %>%
+  # Filtrar filas donde metacritic_rating o reviewer_rating son NA
+  filter(!is.na(metacritic_rating) & !is.na(reviewer_rating)) %>%
+  slice_head(n = 10) %>%
+  mutate(metacritic_rating = metacritic_rating / 10) %>%  # Ajustar la puntuación a sobre 10
+  pivot_longer(cols = c(metacritic_rating, reviewer_rating), 
+               names_to = "tipo", 
+               values_to = "valor") 
+
+# Crear el gráfico de barras
+ggplot(datos_long, aes(x = name, y = valor, fill = tipo)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +  # Ajustar ancho de barras
+  labs(title = "Comparación de Metacritic y Reviewer Ratings",
+       x = "Juegos",
+       y = "Puntuaciones",
+       fill = "Tipo") +
+  scale_fill_manual(values = c("metacritic_rating" = "skyblue", "reviewer_rating" = "coral")) +  # Cambiar colores
+  theme_minimal() +  # Cambiar a un tema minimalista
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotar etiquetas
+       
+```
+
+Con esto se puede observar que ambas puntuaciones suelen tener valores muy cercanos, incluso iguales, exceptuando algunos casos como por ejemplo "Microsoft Flight Simulator", que ha sido mejor puntuado por los críticos, o "The Tiny Bang Story, que ha sido mejor puntuado por los jugadores.
+
+
+También se ha realizado un gráfico de dispersión para visualizar mejor la correlación entre las dos puntuaciones.
+```{r}
+ggplot(datos, aes(x = metacritic_rating, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "skyblue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "coral", se = FALSE) +  # Línea de tendencia lineal
+  theme_minimal() +
+  labs(title = "Comparación entre Metacritic Rating y Reviewer Rating",
+       x = "Metacritic Rating (0-100)",
+       y = "Reviewer Rating (0-10)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Correlación:
+```{r}
+cor_año_criticos <- cor(datos$reviewer_rating, datos$metacritic_rating, use = "complete.obs")
+cor_año_criticos
+
+```
+
+La línea roja representa la correlación positiva que hay entre las dos puntuaciones, es decir, que suelen ser muy parecidas en la mayoría de los casos. Además podemos observar que la mayoría de los juegos suelen tener una puntuación de entre 5 y el 7.5.
+
+```{r}
+reg_reviewer_metacritic<- lm(reviewer_rating ~ metacritic_rating, data = datos)
+summary(reg_reviewer_metacritic)
+```
+
+### 4.2.5. Análisis de 'reviewer_rating' y 'metacritic_rating' vs 'to_beat_main'
+
+Se han realizado dos gráficos de dispersión para ver si había algún tipo de correlación entre la puntuación de los críticos y los reviewers, y el tiempo para completar un juego.
+
+```{r}
+# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
+datos_filtrados <- datos %>%
+  filter(to_beat_main >= 0 & to_beat_main <= 100)
+
 # Gráfico de dispersión para comparar reviewer_rating y to_beat_main
-ggplot(datos, aes(x = to_beat_main, y = reviewer_rating)) +
-  geom_point(alpha = 0.5, color = "green") +  # Puntos de color verde con algo de transparencia
-  geom_smooth(method = "lm", color = "orange", se = FALSE) +  # Línea de tendencia lineal
+ggplot(datos_filtrados, aes(x = to_beat_main, y = reviewer_rating)) +
+  geom_point(alpha = 0.5, color = "skyblue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "coral", se = FALSE) +  # Línea de tendencia lineal
   theme_minimal() +
   labs(title = "Comparación entre Reviewer Rating y Tiempo para Completar el Juego Principal",
        x = "Tiempo para Completar el Juego Principal (horas)",
        y = "Reviewer Rating (0-10)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+Correlación:
+```{r}
+cor_reviewer_main <- cor(datos$reviewer_rating, datos$to_beat_main, use = "complete.obs")
+cor_reviewer_main
+
+```
+```{r}
+reg_reviewer_main<- lm(reviewer_rating ~ to_beat_main, data = datos)
+summary(reg_reviewer_main)
+```
 
 
 
 ```{r}
+# Filtrar los datos para mantener solo juegos con un tiempo de completar entre 0 y 100 horas
+datos_filtrados <- datos %>%
+  filter(to_beat_main >= 0 & to_beat_main <= 100)
+
 # Gráfico de dispersión para comparar metacritic_rating y to_beat_main
-ggplot(datos, aes(x = to_beat_main, y = metacritic_rating)) +
-  geom_point(alpha = 0.5, color = "blue") +  # Puntos de color azul con algo de transparencia
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Línea de tendencia lineal
+ggplot(datos_filtrados, aes(x = to_beat_main, y = metacritic_rating)) +
+  geom_point(alpha = 0.5, color = "skyblue") +  # Puntos de color azul con algo de transparencia
+  geom_smooth(method = "lm", color = "coral", se = FALSE) +  # Línea de tendencia lineal
   theme_minimal() +
   labs(title = "Comparación entre Metacritic Rating y Tiempo para Completar el Juego Principal",
        x = "Tiempo para Completar el Juego Principal (horas)",
        y = "Metacritic Rating (0-100)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+Correlación:
+```{r}
+cor_metacritic_main <- cor(datos$metacritic_rating, datos$to_beat_main, use = "complete.obs")
+cor_metacritic_main
 
-### Ánalisis de 'to_beat_extra' y 'to_beat_copletionist'
-// De nuevo, toda esta parte habrá que redactarla mejor después de revisar bien que todo tiene sentido.
-A continuación se presenta un gráfico de dispersión entre las variables to_beat_extra y to_beat_completionist para estudiar la posible relación entre ambas:
-```{r scatter_plot_extra_completionist, echo=TRUE}
-# Filtrar los datos para eliminar valores NA en las variables to_beat_extra y to_beat_completionist
-datos_filtrados_dispersion <- datos %>%
-  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
+```
 
-# Crear el gráfico de dispersión
-ggplot(datos_filtrados_dispersion, aes(x = to_beat_extra, y = to_beat_completionist)) +
-  geom_point(color = "blue", alpha = 0.5) +  # Agregar puntos de dispersión
-  labs(title = "Gráfico de Dispersión: Tiempo para Completar Contenido Extra vs. Completar Todo el Juego",
-       x = "Tiempo para Completar Contenido Extra (horas)",
-       y = "Tiempo para Completar Todo el Juego (horas)") +
+```{r}
+reg_metacritic_main<- lm(metacritic_rating ~ to_beat_main, data = datos)
+summary(reg_metacritic_main)
+```
+
+Se puede observar en ambos casos que la correlación es muy baja tendiendo a cero por lo que no hay evidencia de que el tiempo en completar el juego principal tenga un impacto significativo en la puntuación de Metacritic o Reviewer Rating. Ambos gráficos tienen juegos con muy buenas puntuaciones que no tienen muchas horas de juego, lo mismo con muchas horas. No hay un patrón distinguible y se puede concluir que el tiempo no es una variable decisiva.
+
+
+### 4.2.6. Análisis de 'tags' y 'metacritic_rating'
+A continuación un resumen estadístico de ambas variables:
+
+```{r}
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|") %>%  # Separar tags por coma
+  mutate(tags = str_trim(tags))  # Eliminar espacios adicionales
+
+# Paso 2: Agrupar por los tags separados y calcular el resumen
+resumen_tags <- datos_separados %>%
+  group_by(tags) %>%
+  summarise(
+    mean_rating = mean(metacritic_rating, na.rm = TRUE),  # Media de la nota
+    n = n()  # Número de juegos con cada tag
+  ) %>%
+  arrange(desc(mean_rating))  # Ordenar por la media
+
+# Imprimir el resumen
+print(resumen_tags)
+```
+
+Posteriormente se representará esto mismo visualmente con ayuda de un gráfico de box plots:
+
+```{r}
+# Paso 1: Separar los tags por el carácter '|' y eliminar espacios adicionales
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|") %>%  # Separar por '|'
+  mutate(tags = str_trim(tags))  # Eliminar espacios en blanco adicionales
+
+# Paso 2: Filtrar los tags más comunes (aquellos con más de 10 juegos)
+tags_comunes <- datos_separados %>%
+  count(tags) %>%  # Contar la frecuencia de cada tag
+  filter(n > 10) %>%  # Filtrar solo los tags con más de 10 juegos
+  pull(tags)  # Extraer la lista de tags comunes
+
+# Paso 3: Crear el boxplot con los tags más comunes
+ggplot(datos_separados %>% filter(tags %in% tags_comunes), aes(x = tags, y = metacritic_rating)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  # Rotar etiquetas de los tags
+  labs(title = "Distribución de Metacritic Rating por Tags", x = "Tags", y = "Metacritic Rating")
+
+
+```
+
+Al disponer de tantos 'tags' resulta imposible analizarlo de este modo, por lo que, de nuevo, se analizarán únicamente los 15 'tags' más frecuentes:
+
+```{r}
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|+|%%+") %>%  # Separar los tags por '|' o '%%'
+  mutate(tags = str_trim(tags))  # Eliminar espacios en blanco adicionales
+
+# Paso 2: Obtener los 15 tags más comunes
+tags_comunes <- datos_separados %>%
+  count(tags) %>%  # Contar la frecuencia de cada tag
+  top_n(15, n) %>%  # Seleccionar los 15 tags más comunes
+  pull(tags)  # Extraer la lista de los tags comunes
+
+# Paso 3: Crear boxplots agrupados para los 15 tags más comunes
+ggplot(datos_separados %>% filter(tags %in% tags_comunes), 
+       aes(x = tags, y = metacritic_rating)) +  # Eje x es el tag y el metacritic_rating en el eje y
+  geom_boxplot() +
+  labs(title = "Distribución de Metacritic Rating por los 15 Tags Más Comunes", 
+       x = "Tags", 
+       y = "Metacritic Rating") +
   theme_minimal() +
-  geom_smooth(method = "lm", se = FALSE, color = "red")  # Agregar una línea de regresión
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),  # Etiquetas del eje x en vertical
+        plot.margin = margin(10, 10, 10, 20))
 ```
-De igual modo que se ha hecho con anterioridad, se procederá a agrupar los valores que más se alejan de donde se concentra la mayor parte de los datos, en este caso, para ello se mostrará un gráfico hasta 500 en el eje x y hasta 2000 en el eje y:
-```{r scatter_plot_grouped, echo=TRUE}
-# Filtrar los datos para eliminar valores NA en las variables to_beat_extra y to_beat_completionist
-datos_filtrados_grouped <- datos %>%
-  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
 
-# Agrupar valores mayores a 500 horas en to_beat_extra y mayores a 2000 horas en to_beat_completionist
-datos_filtrados_grouped <- datos_filtrados_grouped %>%
-  mutate(to_beat_extra_grouped = ifelse(to_beat_extra > 500, 500, to_beat_extra),
-         to_beat_completionist_grouped = ifelse(to_beat_completionist > 2000, 2000, to_beat_completionist))
+A partir de este último gráfico, entonces, se puede deducir que, en general la media de 'metacritic_rating' de los juegos catalogados bajo cada uno de estos 'tags' no varía demasiado, en su mayoría, su puntuación se mantiene entre los 70 y los 80, con varios valores atípicos por debajo de 50. El único 'tag' que presenta una situación anómala al resto, es "puzzle", que, a diferencia del resto, presenta valores atípicos por encima de la mayoría de puntuaciones, de hecho, muy cercana a 100.
 
-# Crear el gráfico de dispersión agrupado
-ggplot(datos_filtrados_grouped, aes(x = to_beat_extra_grouped, y = to_beat_completionist_grouped)) +
-  geom_point(color = "blue", alpha = 0.5) +  # Agregar puntos de dispersión
-  labs(title = "Gráfico de Dispersión Agrupado: Tiempo para Completar Contenido Extra vs. Completar Todo el Juego",
-       x = "Tiempo para Completar Contenido Extra (horas, agrupado a 500h)",
-       y = "Tiempo para Completar Todo el Juego (horas, agrupado a 2000h)") +
+Por lo tanto, no es posible establecer una relación directa entre los 'tags' de cada juego y su valoración por los críticos.
+
+### 4.2.7. Análisis de 'tags' y 'reviewer_rating' 
+Ya que se dispone de dos variables distintas para medir la satisfacción del público, el análisis anterior se repetirá ahora con las puntuaciones de los usuarios, 'reviewer_rating'. No obstante, dado que ya se ha estudiado ambas variables de puntuación entre sí y obteniendo como resultado que no difieren significativamente, se espera que las conclusiones en comparación al apartado anterior apenas varíen.
+
+Para estudiar ambas variables se seguirá el mismo camino que en el apartado anterior. Primeramente, creando un resumen estadístico de ambas:
+```{r}
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|") %>%  # Separar tags por coma
+  mutate(tags = str_trim(tags))  # Eliminar espacios adicionales
+
+# Paso 2: Agrupar por los tags separados y calcular el resumen
+resumen_tags <- datos_separados %>%
+  group_by(tags) %>%
+  summarise(
+    mean_rating = mean(reviewer_rating, na.rm = TRUE),  # Media de la nota
+    n = n()  # Número de juegos con cada tag
+  ) %>%
+  arrange(desc(mean_rating))  # Ordenar por la media
+
+# Imprimir el resumen
+print(resumen_tags)
+```
+
+Posteriormente se representará esto mismo visualmente con ayuda de un gráfico de box plots:
+
+```{r}
+# Paso 1: Separar los tags por el carácter '|' y eliminar espacios adicionales
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|") %>%  # Separar por '|'
+  mutate(tags = str_trim(tags))  # Eliminar espacios en blanco adicionales
+
+# Paso 2: Filtrar los tags más comunes (aquellos con más de 10 juegos)
+tags_comunes <- datos_separados %>%
+  count(tags) %>%  # Contar la frecuencia de cada tag
+  filter(n > 10) %>%  # Filtrar solo los tags con más de 10 juegos
+  pull(tags)  # Extraer la lista de tags comunes
+
+# Paso 3: Crear el boxplot con los tags más comunes
+ggplot(datos_separados %>% filter(tags %in% tags_comunes), aes(x = tags, y = reviewer_rating)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  # Rotar etiquetas de los tags
+  labs(title = "Distribución de Reviewer Rating por Tags", x = "Tags", y = "Reviewer Rating")
+
+
+```
+
+Tal y como ocurría en el caso anterior, al disponer de tantos 'tags' resulta imposible analizarlo de este modo, por lo que, de nuevo, se analizarán únicamente los 15 'tags' más frecuentes:
+
+```{r}
+datos_separados <- datos %>%
+  separate_rows(tags, sep = "\\|+|%%+") %>%  # Separar los tags por '%%' o '|'
+  mutate(tags = str_trim(tags))  # Eliminar espacios en blanco adicionales
+
+# Paso 2: Obtener los 15 tags más comunes
+tags_comunes <- datos_separados %>%
+  count(tags) %>%  # Contar la frecuencia de cada tag
+  top_n(15, n) %>%  # Seleccionar los 15 tags más comunes
+  pull(tags)  # Extraer la lista de los tags comunes
+
+# Paso 3: Crear boxplots agrupados por tag
+ggplot(datos_separados %>% filter(tags %in% tags_comunes), 
+       aes(x = tags, y = reviewer_rating)) +  # Eje x es el tag, y el reviewer_rating
+  geom_boxplot() +
+  labs(title = "Distribución de Reviewer Rating por los 15 Tags Más Comunes", 
+       x = "Tags", 
+       y = "Reviewer Rating") +
   theme_minimal() +
-  geom_smooth(method = "lm", se = FALSE, color = "red")  # Agregar una línea de regresión
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),  # Etiquetas del eje x en vertical
+        plot.margin = margin(10, 10, 10, 20))
 ```
-Todos los valores que se salgan del rango marcado por los ejes en el gráfico, se colocarán en el límite de cada eje, es decir, 500 en el caso del eje de abscisas y 2000 en el eje de ordenadas.
 
-Cálculo de correlación:
-```{r correlation_analysis, echo=TRUE}
-# Filtrar datos para eliminar NA en to_beat_extra y to_beat_completionist
-datos_filtrados_correlacion <- datos %>%
-  filter(!is.na(to_beat_extra) & !is.na(to_beat_completionist))
+Analizando con detenimiento estos resultados, se puede observar que todos estos 'tags' (los más comunes) se encuentran dentro del rango de 5 y 7,5 en 'reviewer_rating'. No obstante, a diferencia del caso anterior, aquí se puede apreciar con mayor claridad que hay tags en los que las reseñas no varían demasiado, pues su "caja" es más pequeña en comparación a las demás. Tal es el caso de "2D", "Singleplayer", "Atmospheric", "Story Rich" y "Pixel Graphics", cuyos ratings se encuentran entre 6 y 8 y son justamente estos tags los únicos que presentan valores atípicos. Los 'tags' peor valorados resultan ser "Early Access", "RPG" e "Indie", ya que ambos cuentan con una mediana muy cercana a 5.
 
-# Calcular la correlación
-correlation_value <- cor(datos_filtrados_correlacion$to_beat_extra, 
-                         datos_filtrados_correlacion$to_beat_completionist, 
-                         method = "pearson")
+# 5. Conclusión 
 
-# Mostrar el resultado
-correlation_value
-```
-Correlación de 0,58.
+Habiendo analizado todas las relaciones que nos habíamos propuesto y en las que podíamos encontrar una utilidad para analizar el mercado, nos hemos encontrado con diversos factores sobre las tendencias de las últimas décadas. Empezando con los tags, se puede ver un claro favoritismo hacia el tag de juego "Indie" durante todo el 2014 hasta el 2020, siendo sustituido en los últimos años por "Singleplayer". Al analizar cómo se comportan los tags más frecuentes al ser enfrentados con la duración de sus contenidos, se puede ver cómo se tiende a realizar juegos de entre 3 y 15 horas.
 
-Tendencia lineal.
+A través de las tablas y correlaciones de cómo las críticas han ido cambiando según los años, se puede determinar que hay una relación entre ambos factores, aunque sea pequeña. Con ello, llegamos a la conclusión de que, a medida que ha avanzado la industria, factores como la imagen o calidad final del producto visual han ido cobrando más importancia gracias a las mejoras en las consolas y ordenadores. Por otro lado, también hemos visto cómo la puntuación de los jugadores es similar a la de Metacritic y el parecido entre ambas; además, también comparten la nula influencia que posee la duración del juego en su nota.
 
-A partir de estos gráficos es posible establecer entonces una tendencia lineal entre ambas variables. No obstante, al contar con tan solo 0,58 de correlación, se podría aventurar que no son variables cuya relación lineal sea tan significativa. Ciertamente, es innegable que cuánto mayor sea el tiempo extra del juego, mayor será el tiempo total necesario para completar todos los objetivos, por lo tanto, no son variables completamente sin relación. Sin embargo, no es posible obviar que en su mayoría, los juegos suelen contar con muchas más horas de contenido principal que extra, por lo cual, ambas presentarían una correlación mayor.
+En conclusión:
 
-# Conclusión 
+- Los juegos con los tags más frecuentes tienden a durar alrededor de 15 horas. Esto se podría justificar con que uno de los tags más frecuentes es "Indie", que es normalmente usado para referirse a estudios pequeños que trabajan con menos presupuesto y sacan producciones más cortas.
+
+- La duración de los juegos no influye en el recibimiento de este.
+
+- Ha subido la dependencia entre buenas reviews con el tiempo, justificando así la necesidad de producir buenos gráficos.
+
+- La opinión de Metacritic y de los jugadores comparten similitudes y son compatibles en un rango aceptable.
+
+- El peso de los 'tags' en los ratings de Metacritic apenas es perceptible, no obstante, se puede observar una mayor tendencia a puntuar mejor "2D", "Singleplayer", "Atmospheric", "Story Rich" y "Pixel Graphics" por parte de los reviewers.
+
+
+Github del proyecto: https://github.com/irenetm17/EstadisticaMomento
