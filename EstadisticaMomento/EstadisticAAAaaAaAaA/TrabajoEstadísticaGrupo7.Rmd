@@ -238,12 +238,8 @@ knitr::kable(tabla_top_bottom, digits = 4,
 ### 4.1.6. Variable 'to_beat_main'
 ```{r}
 
-# Remover NA's 
-datos_limpios <- datos %>%
-  filter(!is.na(to_beat_main))
-
 # Definir intervalos
-Tiempo <- cut(datos_limpios$to_beat_main, breaks = 600)  # Definimos intervalos
+Tiempo <- cut(datos_limpios$to_beat_main, breaks = 10)  # Definimos intervalos
 
 # Crea la tabla de frecuencias
 tabla_frecuencias2 <- as.data.frame(table(Tiempo))
@@ -257,6 +253,38 @@ tabla_frecuencias2 <- tabla_frecuencias2 %>%
 # Mostrar la tabla con formato usando knitr::kable
 knitr::kable(tabla_frecuencias2, digits = 4, 
              caption = "Valores de 'to_beat_main'")
+
+
+```
+
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
+
+```{r}
+
+# Truncar los valores mayores a 50
+datos$to_beat_main <- ifelse(datos$to_beat_main > 50, 51, datos$to_beat_main)
+
+# Crear las etiquetas personalizadas para los intervalos
+etiquetas_intervalos <- c(paste0("[", seq(0, 45, by = 5), ", ", seq(5, 50, by = 5), ")"), "Más de 50")
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_main, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crear la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcular la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_main'")
 
 
 ```
@@ -308,23 +336,49 @@ La información se amplía y precisa con este resumen en el que se destaca que e
 
 ### 4.1.7. Variable 'to_beat_extra'
 ```{r}
-# Crea una tabla de frecuencias a partir de la variable 'to_beat_extra'
-tabla_frecuencias2 <- as.data.frame(table(datos$to_beat_extra))
+
+Tiempo <- cut(datos$to_beat_extra, breaks = 10)  # Definimos intervalos
+
+# Crea la tabla de frecuencias 
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
 
 # Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
-
 tabla_frecuencias2 <- tabla_frecuencias2 %>%
   mutate(f = Freq / sum(Freq),         # Frecuencia relativa
          N = cumsum(Freq),             # Frecuencia acumulada
          F = cumsum(f))                # Frecuencia relativa acumulada
 
-# Filtrar los primeros 25 valores del dataset
-tabla_frecuencias2_top25 <- tabla_frecuencias2 %>%
-  slice(1:25)  # Seleccionar las primeras 25 filas
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'Valores de to_beat_extra'")
+```
+
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
+
+```{r}
+
+# Truncar los valores mayores a 50
+datos$to_beat_extra <- ifelse(datos$to_beat_extra > 50, 51, datos$to_beat_extra)
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_extra, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
 
 # Mostrar la tabla con formato usando knitr::kable
-knitr::kable(tabla_frecuencias2_top25, digits = 4, 
-             caption = "Primeros 25 Valores de 'to_beat_extra'")
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_extra'")
+
 
 ```
 
@@ -391,8 +445,37 @@ tabla_frecuencias2 <- tabla_frecuencias2 %>%
 
 # Mostrar la tabla con formato usando knitr::kable
 knitr::kable(tabla_frecuencias2, digits = 4, 
-             caption = "'to_beat_completionist'")
+             caption = "'Valores de to_beat_completionist'")
 ```
+Como en la tabla de frecuencias no se apreciaban bien los intervalos debido a la inmensa cantidad de valores, se ha seleccionado un rango de 0 a 50 horas, que es donde se encuentran la mayoría de valores.
+
+```{r}
+
+# Truncar los valores mayores a 50
+datos$to_beat_completionist <- ifelse(datos$to_beat_completionist > 50, 51, datos$to_beat_completionist)
+
+# Definir los intervalos en el rango de 0 a 50 horas, más un intervalo adicional para valores mayores a 50
+Tiempo <- cut(datos$to_beat_completionist, 
+              breaks = c(seq(0, 50, length.out = 11), Inf),   # Inf para incluir valores mayores a 50
+              labels = etiquetas_intervalos, 
+              right = FALSE)  # Intervalos cerrados a la izquierda y abiertos a la derecha
+
+# Crea la tabla de frecuencias
+tabla_frecuencias2 <- as.data.frame(table(Tiempo))
+
+# Calcula la frecuencia relativa (f), frecuencia acumulada (N) y frecuencia relativa acumulada (F)
+tabla_frecuencias2 <- tabla_frecuencias2 %>%
+  mutate(f = Freq / sum(Freq),         # Frecuencia relativa
+         N = cumsum(Freq),             # Frecuencia acumulada
+         F = cumsum(f))                # Frecuencia relativa acumulada
+
+# Mostrar la tabla con formato usando knitr::kable
+knitr::kable(tabla_frecuencias2, digits = 4, 
+             caption = "'to_beat_completionist'")
+
+
+```
+
 A continuación el gráfico de densidad de 'to_beat_completionist' sin agrupar datos:
 ```{r density_plot3, echo=TRUE}
 # Filtrar los datos para eliminar valores NA
@@ -534,6 +617,8 @@ Primeramente, se compararán los 'tags' con el año de salida para encontrar los
 Por último, se analizarán las reviews de críticos y jugadores con el tiempo de juego, en busca de una posible relación entre la longitud de un juego y su recibimiento en la industria. También se llevará a cabo el mismo análisis, pero con los 'tags' en lugar de con la duración de los juegos.
 
 ### 4.2.0. Correlaciones
+
+//PONERLAS EN UNA MATRIZ
 
 Antes de todo, vamos a poner un breve resumen de las correlaciones entre los pares de datos que vamos analizar a modo de introducción. 
 
