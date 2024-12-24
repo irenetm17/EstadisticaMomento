@@ -47,9 +47,24 @@ f
 
 ```
 * Calcular P{−1 ≤ X ≤ 2}:  
-Para ello se debe calcular F(-1) y F(2)  
+Para averiguar la probabilidad del intervalo se debe calcular la función de distribución en los límites x = -1 y x = 2   
+$F(-1) = e^{-e^{-1}}$
+$F(2) = e^{-e^{2}}$  
+Finalmente se restan estos límites para obtener la probabilidad de que X pertenezca al intervalo  
 
+```{r}
+# Definir la función de distribución F(x)
+F <- function(x) {
+  exp(-exp(-x))
+}
 
+# Calcular P(-1 <= X <= 2)
+probabilidad <- F(2) - F(-1)
+
+# Imprimir el resultado
+probabilidad
+```
+Por lo tanto P{−1 ≤ X ≤ 2} = F(2) - F(-1) = 0.807435 = 80.74%
 
 
 
