@@ -366,11 +366,11 @@ display: none;
 perteneciente a <span class="math inline">\(\mathbb{R}\)</span>.
 Realizar lo siguiente:</p>
 <ul>
-<li>Determinar la función de densidad de X:<br />
+<li><strong>Determinar la función de densidad de X:</strong><br />
 Para determinar la función de densidad se debe calcular la
 <strong>derivada</strong> de la funcion de distribución <span class="math inline">\(F(x) = e^{-e^{-x}}\)</span>.</li>
 </ul>
-<p>El resultado es: <span class="math inline">\(F(x) = e^{-e^{-x}} *
+<p>El resultado es: <span class="math inline">\(f(x) = e^{-e^{-x}} *
 e^{-x}\)</span></p>
 <pre class="r"><code># Cargar la librería
 library(Deriv)
@@ -390,6 +390,99 @@ f</code></pre>
 ##     .e2 &lt;- exp(-x)
 ##     exp(-.e2) * .e2
 ## }</code></pre>
+<ul>
+<li><strong>Calcular P{−1 ≤ X ≤ 2}:</strong><br />
+Para averiguar la probabilidad del intervalo se debe calcular la función
+de distribución en los límites x = -1 y x = 2<br />
+<span class="math inline">\(F(-1) = e^{-e^{-1}}\)</span><br />
+<span class="math inline">\(F(2) = e^{-e^{2}}\)</span><br />
+Finalmente se restan estos límites para obtener la probabilidad de que X
+pertenezca al intervalo</li>
+</ul>
+<pre class="r"><code># Definir la función de distribución F(x)
+F &lt;- function(x) {
+  exp(-exp(-x))
+}
+
+# Calcular P(-1 &lt;= X &lt;= 2)
+probabilidad &lt;- F(2) - F(-1)
+
+# Imprimir el resultado
+probabilidad</code></pre>
+<pre><code>## [1] 0.807435</code></pre>
+<p>Por lo tanto <span class="math inline">\(P(−1 ≤ X ≤ 2) = F(2) - F(-1)
+= 0.807435 = 80.74\)</span>%</p>
+<ul>
+<li><strong>Calcular P{0 ≤ X ≤ 1 | −1 ≤ X ≤ 1}:</strong><br />
+Para ello usaremos la fórmula de la probabilidad condicionada <span class="math display">\[P(A \mid B) = \frac{P(A \cap B)}{P(B)}\]</span>
+donde P(<span class="math inline">\(A \cap B\)</span>) es la
+probabilidad del intervalo P{0 ≤ X ≤ 1} ya que ya está contenido en el
+intervalo {−1 ≤ X ≤ 1}, por lo que nos quedaría la siguiente fórmula:
+<span class="math display">\[ P(0 \leq X \leq 1 \mid -1 \leq X \leq 1) =
+\frac{P(0 \leq X \leq 1)}{P(-1 \leq X \leq 1)}\]</span> La probabilidad
+de cada intervalo se calcula como se hizo en el apartado anterior:<br />
+P{0 ≤ X ≤ 1} = F(1) - F(0)<br />
+P{−1 ≤ X ≤ 1} = F(1) - F(-1)</li>
+</ul>
+<pre class="r"><code># Definir la función de distribución acumulada F(x)
+F &lt;- function(x) {
+  exp(-exp(-x))
+}
+
+# Calcular P(0 &lt;= X &lt;= 1)
+P0_1 &lt;- F(1) - F(0)
+
+# Calcular P(-1 &lt;= X &lt;= 1)
+Pmenos1_1 &lt;- F(1) - F(-1)
+
+# Calcular la probabilidad condicional
+Pcondicionada &lt;- P0_1 / Pmenos1_1
+
+# Imprimir el resultado
+Pcondicionada</code></pre>
+<pre><code>## [1] 0.5179091</code></pre>
+<p>Tras hacer los cálculos el resultado es <span class="math display">\[P(0 \leq X \leq 1 \mid -1 \leq X \leq 1) =
+\frac{P(0 \leq X \leq 1)}{P(-1 \leq X \leq 1)} = 0.5179091 =
+51.79\%\]</span></p>
+<ul>
+<li><strong>Hallar la mediana de X:</strong><br />
+La mediana es el valor que se encuentra en el medio de toda muestra, por
+lo que se hallará donde la probabilidad sea 0.5<br />
+<span class="math display">\[P(X \leq m) = F(m) = 0.5\]</span><br />
+Así, se calcula F(m) <span class="math display">\[F(m) = e^{-e^{-m}} =
+0.5\]</span></li>
+</ul>
+<pre class="r"><code># Definir la función de distribución F(m)
+F &lt;- function(m) {
+  exp(-exp(-m))
+}
+
+# Resolver F(m) = 0.5 para encontrar la mediana
+median &lt;- uniroot(function(m) F(m) - 0.5, lower = -10, upper = 10)$root
+
+# Mostrar la mediana
+median</code></pre>
+<pre><code>## [1] 0.366513</code></pre>
+<p>Como resultado, la mediana es <span class="math inline">\(m =
+0.366513\)</span></p>
+<ul>
+<li><strong>Hallar la moda de X:</strong> La moda de una variable
+aleatoria es el valor que ocurre con más frecuencia. Para calcularla se
+hallará el valor de x donde la función de densidad f(x) alcanza su valor
+máximo. En el primer apartado se calculó f(x): <span class="math display">\[f(x) = e^{-e^{-x}} * e^{-x}\]</span> Para hallar
+la moda se debe derivar f(x) e igualarla a 0: <span class="math display">\[f&#39;(x) =  0\]</span></li>
+</ul>
+<pre class="r"><code># Usar optim() para maximizar f(x) en el intervalo [-2, 2]
+optim_result &lt;- optim(0, function(x) -f(x), method = &quot;Brent&quot;, lower = -2, upper = 2)
+
+# Redondeamos el resultado ya que nos da demasiados decimales
+moda &lt;- round(optim_result$par)
+
+# Mostrar la moda
+moda</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>Tras realizar los cálculos se concluye que <span class="math inline">\(moda = 0\)</span>, siendo este el valor más
+frecuente de X.</p>
 </div>
 
 
