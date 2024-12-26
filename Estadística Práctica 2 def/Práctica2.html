@@ -1587,30 +1587,22 @@ Realizar lo siguiente:</p>
 Para determinar la función de densidad se debe calcular la
 <strong>derivada</strong> de la función de distribución <span class="math inline">\(F(x) = e^{-e^{-x}}\)</span>.</li>
 </ul>
-<p>El resultado es: <span class="math inline">\(f(x) = e^{-e^{-x}} *
-e^{-x}\)</span></p>
-<pre class="r"><code># Cargar la librería
-library(Deriv)
-
-# Definir la función de distribución F(x)
-F &lt;- function(x) {
-  exp(-exp(-x))
-}
+<pre class="r"><code># Definir la función de distribución F(x)
+F &lt;- expression(exp(-exp(-x)))
 
 # Calcular la derivada simbólicamente para obtener f(x)
-f &lt;- Deriv(F, &quot;x&quot;)
+f &lt;- D(F, &quot;x&quot;)
 
 # Imprimir la derivada (la densidad f(x))
 f</code></pre>
-<pre><code>## function (x) 
-## {
-##     .e2 &lt;- exp(-x)
-##     exp(-.e2) * .e2
-## }</code></pre>
+<pre><code>## exp(-exp(-x)) * exp(-x)</code></pre>
+<p>El resultado es: <span class="math inline">\(f(x) = e^{-e^{-x}} *
+e^{-x}\)</span></p>
 <ul>
 <li><strong>Calcular P{−1 ≤ X ≤ 2}:</strong><br />
 Para averiguar la probabilidad del intervalo se debe calcular la función
-de distribución en los límites x = -1 y x = 2:<br />
+de distribución en los límites<br />
+x = -1 y x = 2:<br />
 <span class="math inline">\(F(-1) = e^{-e^{-1}}\)</span><br />
 <span class="math inline">\(F(2) = e^{-e^{2}}\)</span><br />
 Finalmente, se restan estos límites para obtener la probabilidad de que
@@ -1633,7 +1625,7 @@ probabilidad</code></pre>
 <li><strong>Calcular P{0 ≤ X ≤ 1 | −1 ≤ X ≤ 1}:</strong><br />
 Para ello, se utilizará la fórmula de la probabilidad condicionada <span class="math display">\[P(A \mid B) = \frac{P(A \cap B)}{P(B)}\]</span>
 donde P(<span class="math inline">\(A \cap B\)</span>) es la
-probabilidad del intervalo P{0 ≤ X ≤ 1}, ya que, ya está contenido en el
+probabilidad del intervalo P{0 ≤ X ≤ 1}, ya que ya está contenido en el
 intervalo {−1 ≤ X ≤ 1}, por lo que se obtiene la siguiente fórmula:
 <span class="math display">\[ P(0 \leq X \leq 1 \mid -1 \leq X \leq 1) =
 \frac{P(0 \leq X \leq 1)}{P(-1 \leq X \leq 1)}\]</span> La probabilidad
@@ -1679,8 +1671,7 @@ median &lt;- uniroot(function(m) F(m) - 0.5, lower = -10, upper = 10)$root
 # Mostrar la mediana
 median</code></pre>
 <pre><code>## [1] 0.366513</code></pre>
-<p>Como resultado, la mediana es <span class="math inline">\(m =
-0.366513\)</span>.</p>
+<p>Despejando m el resultado es que la mediana es <span class="math inline">\(m = 0.366513\)</span>.</p>
 <ul>
 <li><strong>Hallar la moda de X:</strong> La moda de una variable
 aleatoria es el valor que ocurre con más frecuencia. Para calcularla se
@@ -1689,7 +1680,11 @@ máximo. En el primer apartado se calculó f(x): <span class="math display">\[f(
 la moda se debe derivar f(x) e igualarla a 0: <span class="math display">\[f&#39;(x) =  0\]</span> Todo esto se realiza con
 los cálculos de R:</li>
 </ul>
-<pre class="r"><code># Usar optim() para maximizar f(x) en el intervalo [-2, 2]
+<pre class="r"><code># Definir la función de densidad f(x)
+f &lt;- function(x) {
+  exp(-exp(-x)) * exp(-x)
+}
+# Usar optim() para maximizar f(x) en el intervalo [-2, 2]
 optim_result &lt;- optim(0, function(x) -f(x), method = &quot;Brent&quot;, lower = -2, upper = 2)
 
 # Redondeamos el resultado ya que nos da demasiados decimales
@@ -1700,6 +1695,24 @@ moda</code></pre>
 <pre><code>## [1] 0</code></pre>
 <p>Tras realizar los cálculos se concluye que <span class="math inline">\(moda = 0\)</span>, siendo este el valor más
 frecuente de X.</p>
+<ul>
+<li><strong>Determinar la distribución de la variable aleatoria <span class="math inline">\(Y= e^{-x}\)</span>:</strong></li>
+</ul>
+<p>Se quiere hallar la función <span class="math inline">\(FY(y)\)</span>. Sabiendo que Y es <span class="math inline">\(Y= e^{-x}\)</span> se plantea que: <span class="math display">\[FY(y) = P(Y \leq y) = P(e^{-X} \leq y)\]</span>
+Seguidamente, se debe relacionar Y con la distribución que ya conocemos,
+en este caso X. Para ello se despeja X en la inecuación: <span class="math display">\[P(e^{-X} \leq y) \quad \Rightarrow \quad P(-X
+\leq \ln(y))
+\Rightarrow \quad P(X \geq -\ln(y))\]</span> Para seguir despejando X se
+necesita que sea <span class="math inline">\(\leq\)</span>, por lo que
+calcularemos su complementario: <span class="math display">\[P(X \geq
+-\ln(y)) = 1 - P(X &lt; -\ln(y))\]</span> Ahora se puede relacionar con
+F(x), simplificando la ecuación anterior a: <span class="math display">\[FY(y) = 1 - F(-\ln(y))\]</span> Sustituyendo
+<span class="math inline">\(F(-ln(y))\)</span> nos queda que: <span class="math display">\[FY(y) = 1 - e^{-e^{\ln(y)}}\]</span> Como sabemos
+que <span class="math inline">\(Y= e^{-x}\)</span>, que en función de
+<span class="math inline">\(−ln(y)\)</span> quedaría <span class="math inline">\(Y= e^{-ln(y)}\)</span> podemos sustituir en FY(y)
+simplificandolo a: <span class="math display">\[FY(y) = 1 -
+e^{-y}\]</span> Esa sería la función de distribución de la variable
+aleatoria Y.</p>
 </div>
 <div id="ejercicio-3-evaluación-de-efectividad-de-la-vacuna-experimental" class="section level1">
 <h1>Ejercicio 3: Evaluación de Efectividad de la Vacuna
