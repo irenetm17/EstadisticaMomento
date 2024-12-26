@@ -1,0 +1,91 @@
+---
+title: 'Práctica 2: Probabilidad e Inferencia'
+author: "Grupo7"
+date: "2024-12-21"
+
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,          
+  message = FALSE,      # Oculta mensajes (como los de carga de paquetes)
+  warning = FALSE       # Oculta advertencias (warnings)
+)
+```
+
+# Ejercicio 3
+**1) Formule el contraste de hipótesis:**
+
+Para evaluar si la nueva vacuna es más efectiva que la anterior (que tenía un 25% de efectividad)siendo p la probabilidad de éxito:
+
+- La vacuna no es más efetiva: (H0):p<=0.25
+
+- La vacuna es más efectiva: (H1): p>0.25
+
+**2) Definición de las regiones de aceptación y rechazo**
+
+El número de éxitos sigue una distribución binomial XBinomial(n=20,p) y tomando una significancia de alpha= 0.05:
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_H0 <- 0.25   # Probabilidad bajo H0
+alpha <- 0.05    # Nivel de significancia
+
+# Se calcula el percentil correspondiente 1-alpha que da el punto crítico para la región de rechazo
+critical_value <- qbinom(1 - alpha, size = n, prob = p_H0)
+
+# Regiones
+cat("Región de rechazo: X >", critical_value, "\n")
+cat("Región de aceptación: X <=", critical_value, "\n")
+```
+Por lo tanto nos queda que la región de rechazo es de X>8 (más de ocho sujetos resistentes) y la región de aceptación es de X<=8 (hasta 8 sujetos resistentes).Esto implica que si observamos más de 8 éxitos, rechazamos H0 en favor de H1.
+
+**3) Cálculo de las probabilidades de error tipo 1 y tipo 2**
+
+**A** Error tipo 1:Rechazar H0 aunque es verdadera, es decir, si p=0,25 y X>8.
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_null <- 0.25   # Probabilidad error 1
+k <- 8  # Valor crítico
+
+# Cálculo de la probabilidad acumulativa P(X ≤ 8 | p = 0.25)
+p_cumulative <- pbinom(k, size = n, prob = p_null)
+
+# Cálculo de α
+alpha <- 1 - p_cumulative
+
+# Resultados
+cat("P(X ≤ 8 | p = 0.25):", p_cumulative, "\n")
+cat("Probabilidad de error tipo 1 (α):", alpha, "\n")
+
+```
+
+Esto significa que hay un 4.1% de probabilidades de rechazar H0 aunque sea verdadera, esto es un porcentaje relativamente bajo.
+
+**B** Error tipo 2:No rechazamos H0 cuando H1 es verdadera, es decir, p=0.50 y X<= 8.
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_alt <- 0.50    # Probabilidad error 2
+k <- 8  # Valor crítico
+
+# Cálculo de la probabilidad acumulativa P(X ≤ 8 | p = 0.50)
+beta <- pbinom(k, size = n, prob = p_alt)
+
+# Resultado
+cat("P(X ≤ 8 | p = 0.50):", beta, "\n")
+cat("Probabilidad de error tipo 2 (β):", beta, "\n")
+```
+
+Esto significa que hay un 25.2% de probabilidades de no rechazar H0 cuando H1 es verdadera, esto es un porcentaje relativamente alto lo que sugiere que hay una probabilidad de no detectar una mejora en la efectividad de la vacuna.
+
+
