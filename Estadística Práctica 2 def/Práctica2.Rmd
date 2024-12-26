@@ -1,0 +1,292 @@
+---
+title: 'Práctica 2: Probabilidad e Inferencia'
+author: "Grupo7"
+date: "2024-12-21"
+
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    includes:
+      in_header: styles.html
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,          
+  message = FALSE,      # Oculta mensajes (como los de carga de paquetes)
+  warning = FALSE       # Oculta advertencias (warnings)
+)
+```
+
+# Ejercicio 1: Probabilidad en una baraja de cartas
+
+Se seleccionan al azar cinco cartas de una baraja francesa. Calcular la probabilidad de obtener:
+
+* **Un póker:** 
+```{r}
+# 1. Póker (4 cartas iguales de un valor y una carta diferente)
+# - Elegir un valor para las 4 cartas iguales (13 valores)
+# - Elegir 1 de 4 palos para las 4 cartas
+# - Elegir un valor diferente para la carta restante (12 valores restantes)
+# - Elegir el palo de la carta restante (4 palos)
+total_combinaciones <- choose(52, 5)
+poker_combinaciones <- 13 * choose(4, 4) * 12 * 4
+
+prob_poker <- poker_combinaciones / total_combinaciones
+
+prob_poker
+```
+
+* **Un full:**
+```{r}
+# 2. Full (3 cartas iguales de un valor y 2 cartas iguales de otro valor)
+# - Elegir un valor para las 3 cartas iguales (13 valores)
+# - Elegir 3 palos para las 3 cartas (4 palos disponibles)
+# - Elegir un valor para las 2 cartas iguales (12 valores restantes)
+# - Elegir 2 palos para las 2 cartas (4 palos disponibles)
+full_combinaciones <- 13 * choose(4, 3) * 12 * choose(4, 2)
+
+prob_full <- full_combinaciones / total_combinaciones
+
+prob_full
+```
+
+* **Dobles parejas:**
+```{r}
+# 3. Dobles Parejas (2 cartas de un valor, 2 de otro valor y 1 carta de un tercer valor)
+# - Elegir 2 valores para las parejas (13 valores posibles)
+# - Elegir 2 palos para cada una de las parejas (4 palos disponibles)
+# - Elegir un valor para la carta restante (11 valores restantes)
+# - Elegir el palo para la carta restante (4 palos)
+dobles_parejas_combinaciones <- choose(13, 2) * choose(4, 2) * choose(4, 2) * 11 * 4
+
+prob_dobles_parejas <- dobles_parejas_combinaciones / total_combinaciones
+
+prob_dobles_parejas
+```
+
+* **Un trío:**
+```{r}
+# 4. Trío (3 cartas iguales de un valor y 2 cartas de diferentes valores)
+# - Elegir un valor para las 3 cartas iguales (13 valores)
+# - Elegir 3 palos para las 3 cartas (4 palos disponibles)
+# - Elegir 2 valores para las cartas restantes (12 valores restantes)
+# - Elegir 1 palo para cada una de las 2 cartas restantes (4 palos disponibles)
+trio_combinaciones <- 13 * choose(4, 3) * choose(12, 2) * 4 * 4
+
+prob_trio <- trio_combinaciones / total_combinaciones
+
+prob_trio
+```
+
+* **Una escalera:**
+```{r}
+# 5. Escalera (5 cartas consecutivas de cualquier palo)
+# - Elegir el valor más bajo de la escalera (10 opciones)
+# - Elegir los palos de las 5 cartas (4^5 formas)
+escalera_combinaciones <- 10* (4^5) - 10* 4
+
+prob_escalera <- escalera_combinaciones / total_combinaciones
+
+prob_escalera
+```
+
+* **Una escalera de color:**
+```{r}
+# 6. Escalera de Color (5 cartas consecutivas del mismo palo)
+# - Elegir el valor más bajo de la escalera (9 opciones)
+# - Elegir el palo (4 palos disponibles)
+escalera_real_combinaciones <- 10* 4
+
+prob_escalera_real <- escalera_real_combinaciones / total_combinaciones
+
+prob_escalera_real
+```
+
+# Ejercicio 2: Distribución y densidad de una variable aleatoria 
+Sea X una variable aleatoria con función de distribución $F(x) = e^{-e^{-x}}$ para todo x perteneciente a $\mathbb{R}$. Realizar lo siguiente:
+
+* **Determinar la función de densidad de X:**  
+Para determinar la función de densidad se debe calcular la **derivada** de la función de distribución $F(x) = e^{-e^{-x}}$.  
+
+El resultado es: $f(x) = e^{-e^{-x}} * e^{-x}$
+
+
+```{r}
+# Cargar la librería
+library(Deriv)
+
+# Definir la función de distribución F(x)
+F <- function(x) {
+  exp(-exp(-x))
+}
+
+# Calcular la derivada simbólicamente para obtener f(x)
+f <- Deriv(F, "x")
+
+# Imprimir la derivada (la densidad f(x))
+f
+
+```
+* **Calcular P{−1 ≤ X ≤ 2}:**  
+Para averiguar la probabilidad del intervalo se debe calcular la función de distribución en los límites x = -1 y x = 2:  
+$F(-1) = e^{-e^{-1}}$   
+$F(2) = e^{-e^{2}}$  
+Finalmente, se restan estos límites para obtener la probabilidad de que X pertenezca al intervalo.  
+
+```{r}
+# Definir la función de distribución F(x)
+F <- function(x) {
+  exp(-exp(-x))
+}
+
+# Calcular P(-1 <= X <= 2)
+probabilidad <- F(2) - F(-1)
+
+# Imprimir el resultado
+probabilidad
+```
+Por lo tanto $P(−1 ≤ X ≤ 2) = F(2) - F(-1) = 0.807435 = 80.74$%  
+
+* **Calcular P{0 ≤ X ≤ 1 | −1 ≤ X ≤ 1}:**  
+Para ello, se utilizará la fórmula de la probabilidad condicionada \[P(A \mid B) = \frac{P(A \cap B)}{P(B)}\] donde P(\( A \cap B \)) es la probabilidad del intervalo P{0 ≤ X ≤ 1}, ya que, ya está contenido en el intervalo {−1 ≤ X ≤ 1}, por lo que se obtiene la siguiente fórmula:
+\[ P(0 \leq X \leq 1 \mid -1 \leq X \leq 1) = \frac{P(0 \leq X \leq 1)}{P(-1 \leq X \leq 1)}\]
+La probabilidad de cada intervalo se calcula como se hizo en el apartado anterior:   
+P{0 ≤ X ≤ 1} = F(1) - F(0)   
+P{−1 ≤ X ≤ 1} = F(1) - F(-1)
+
+```{r}
+# Definir la función de distribución acumulada F(x)
+F <- function(x) {
+  exp(-exp(-x))
+}
+
+# Calcular P(0 <= X <= 1)
+P0_1 <- F(1) - F(0)
+
+# Calcular P(-1 <= X <= 1)
+Pmenos1_1 <- F(1) - F(-1)
+
+# Calcular la probabilidad condicional
+Pcondicionada <- P0_1 / Pmenos1_1
+
+# Imprimir el resultado
+Pcondicionada
+
+```
+Tras hacer los cálculos el resultado es: 
+\[P(0 \leq X \leq 1 \mid -1 \leq X \leq 1) = \frac{P(0 \leq X \leq 1)}{P(-1 \leq X \leq 1)} = 0.5179091 = 51.79\%\]  
+
+* **Hallar la mediana de X:**  
+La mediana es el valor que se encuentra en el medio de toda muestra, por lo que se hallará donde la probabilidad sea 0.5.
+\[P(X \leq m) = F(m) = 0.5\]  
+Así, se calcula F(m) 
+\[F(m) = e^{-e^{-m}} = 0.5\]
+```{r}
+# Definir la función de distribución F(m)
+F <- function(m) {
+  exp(-exp(-m))
+}
+
+# Resolver F(m) = 0.5 para encontrar la mediana
+median <- uniroot(function(m) F(m) - 0.5, lower = -10, upper = 10)$root
+
+# Mostrar la mediana
+median
+
+```
+Como resultado, la mediana es $m = 0.366513$.  
+
+* **Hallar la moda de X:**
+La moda de una variable aleatoria es el valor que ocurre con más frecuencia. Para calcularla se hallará el valor de x donde la función de densidad f(x) alcanza su valor máximo. En el primer apartado se calculó f(x): 
+\[f(x) = e^{-e^{-x}} * e^{-x}\]
+Para hallar la moda se debe derivar f(x) e igualarla a 0: 
+\[f'(x) =  0\]
+Todo esto se realiza con los cálculos de R:
+```{r}
+# Usar optim() para maximizar f(x) en el intervalo [-2, 2]
+optim_result <- optim(0, function(x) -f(x), method = "Brent", lower = -2, upper = 2)
+
+# Redondeamos el resultado ya que nos da demasiados decimales
+moda <- round(optim_result$par)
+
+# Mostrar la moda
+moda
+```
+Tras realizar los cálculos se concluye que $moda = 0$, siendo este el valor más frecuente de X.
+
+# Ejercicio 3: Evaluación de Efectividad de la Vacuna Experimental
+
+**1) Formular el contraste de hipótesis:**
+
+Para evaluar si la nueva vacuna es más efectiva que la anterior (que tenía un 25% de efectividad) siendo p la probabilidad de éxito:
+
+- La vacuna no es más efetiva: (H0): p <= 0.25
+
+- La vacuna es más efectiva: (H1): p > 0.25
+
+**2) Definición de las regiones de aceptación y rechazo**
+
+El número de éxitos sigue una distribución binomial XBinomial(n=20,p) y tomando una significancia de alpha = 0.05:
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_H0 <- 0.25   # Probabilidad bajo H0
+alpha <- 0.05    # Nivel de significancia
+
+# Se calcula el percentil correspondiente 1-alpha que da el punto crítico para la región de rechazo
+critical_value <- qbinom(1 - alpha, size = n, prob = p_H0)
+
+# Regiones
+cat("Región de rechazo: X >", critical_value, "\n")
+cat("Región de aceptación: X <=", critical_value, "\n")
+```
+Por lo tanto, se obtiene que la región de rechazo es de X > 8 (más de ocho sujetos resistentes) y la región de aceptación es de X <= 8 (hasta 8 sujetos resistentes). Esto implica que si se observan más de 8 éxitos, se rechaza H0 en favor de H1.
+
+**3) Cálculo de las probabilidades de error tipo 1 y tipo 2**
+
+* **Error tipo 1:** Rechazar H0 aunque es verdadera, es decir, si p = 0,25 y X > 8.
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_null <- 0.25   # Probabilidad error 1
+k <- 8  # Valor crítico
+
+# Cálculo de la probabilidad acumulativa P(X ≤ 8 | p = 0.25)
+p_cumulative <- pbinom(k, size = n, prob = p_null)
+
+# Cálculo de α
+alpha <- 1 - p_cumulative
+
+# Resultados
+cat("P(X ≤ 8 | p = 0.25):", p_cumulative, "\n")
+cat("Probabilidad de error tipo 1 (α):", alpha, "\n")
+
+```
+
+Esto significa que hay un 4.1% de probabilidades de rechazar H0 aunque sea verdadera, siendo este un porcentaje relativamente bajo.
+
+* **Error tipo 2:** No rechazamos H0 cuando H1 es verdadera, es decir, p = 0.50 y X <= 8.
+
+
+```{r}
+# Parámetros
+n <- 20          # Tamaño de la muestra
+p_alt <- 0.50    # Probabilidad error 2
+k <- 8  # Valor crítico
+
+# Cálculo de la probabilidad acumulativa P(X ≤ 8 | p = 0.50)
+beta <- pbinom(k, size = n, prob = p_alt)
+
+# Resultado
+cat("P(X ≤ 8 | p = 0.50):", beta, "\n")
+cat("Probabilidad de error tipo 2 (β):", beta, "\n")
+```
+
+Esto significa que hay un 25.2% de probabilidades de no rechazar H0 cuando H1 es verdadera, siendo este un porcentaje relativamente alto, lo que sugiere que hay una probabilidad de no detectar una mejora en la efectividad de la vacuna.
